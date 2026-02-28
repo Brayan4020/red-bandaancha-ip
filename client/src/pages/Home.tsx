@@ -107,6 +107,56 @@ const NETWORK_DATA = {
     { type: "Switches L3", icon: "🔀", count: "Por sede", vlan: 99 },
     { type: "Routers", icon: "📡", count: "Enlace WAN", vlan: 99 },
   ],
+  wanLinks: [
+    {
+      id: "s1-s2",
+      name: "Enlace Sede 1 ↔ Sede 2",
+      from: "Teusaquillo",
+      to: "Campus U Compensar",
+      distance: 3.2,
+      technology: "Fibra Óptica Dedicada",
+      bandwidth: "100 Mbps",
+      bandwidthNum: 100,
+      latency: "2-3 ms",
+      redundancy: "Primario",
+      status: "Activo",
+      color: "#00d4ff",
+      protocols: ["OSPF", "BGP"],
+      description: "Enlace de fibra óptica con QoS garantizado para datos y voz.",
+    },
+    {
+      id: "s2-s3",
+      name: "Enlace Sede 2 ↔ Sede 3",
+      from: "Campus U Compensar",
+      to: "AV68",
+      distance: 2.1,
+      technology: "Fibra Óptica Dedicada",
+      bandwidth: "100 Mbps",
+      bandwidthNum: 100,
+      latency: "2-3 ms",
+      redundancy: "Primario",
+      status: "Activo",
+      color: "#7fff00",
+      protocols: ["OSPF", "BGP"],
+      description: "Enlace de fibra óptica con QoS garantizado para datos y voz.",
+    },
+    {
+      id: "s1-s3",
+      name: "Enlace Sede 1 ↔ Sede 3",
+      from: "Teusaquillo",
+      to: "AV68",
+      distance: 4.8,
+      technology: "Enlace MPLS VPN",
+      bandwidth: "50 Mbps",
+      bandwidthNum: 50,
+      latency: "5-8 ms",
+      redundancy: "Respaldo",
+      status: "Activo",
+      color: "#f59e0b",
+      protocols: ["OSPF", "BGP"],
+      description: "Enlace MPLS VPN como respaldo para garantizar redundancia.",
+    },
+  ],
 };
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -350,7 +400,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Home() {
   const [activeSede, setActiveSede] = useState(0);
-  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment" | "wan">("overview");
 
   const selectedSede = NETWORK_DATA.sedes[activeSede];
   const totalHosts = NETWORK_DATA.sedes.reduce((s, x) => s + x.hosts, 0);
@@ -373,6 +423,7 @@ export default function Home() {
     { id: "subnets", label: "Subredes VLSM", icon: <Network size={16} /> },
     { id: "vlans", label: "Plan de VLANs", icon: <Database size={16} /> },
     { id: "equipment", label: "Equipos de Red", icon: <Server size={16} /> },
+    { id: "wan", label: "Enlaces WAN", icon: <Wifi size={16} /> },
   ] as const;
 
   return (
@@ -820,6 +871,196 @@ export default function Home() {
                         <span className="font-bold" style={{ fontFamily: "var(--font-display)" }}>{svc.name}</span>
                       </div>
                       <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{svc.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── WAN LINKS ── */}
+          {activeSection === "wan" && (
+            <div className="space-y-6 animate-fade-in-up">
+              <div>
+                <h2 className="text-xl font-bold mb-1" style={{ fontFamily: "var(--font-display)", color: "white" }}>
+                  Enlaces WAN
+                </h2>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Topología de interconexión entre sedes con detalles de ancho de banda, tecnología y redundancia.
+                </p>
+              </div>
+
+              {/* WAN Topology Overview */}
+              <div className="card-blueprint rounded-xl p-6">
+                <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)", color: "rgba(255,255,255,0.8)" }}>
+                  Diagrama de Topología WAN
+                </h3>
+                <div className="flex flex-col md:flex-row items-center justify-around gap-6 py-8">
+                  {/* Sede 1 */}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center font-bold text-xl mb-2 animate-pulse-glow"
+                      style={{ background: "rgba(0,212,255,0.2)", color: "#00d4ff", fontFamily: "var(--font-mono)" }}
+                    >
+                      S1
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#00d4ff" }}>Teusaquillo</span>
+                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>1.600 hosts</span>
+                  </div>
+
+                  {/* Connection 1-2 */}
+                  <div className="flex flex-col items-center flex-1 md:flex-none">
+                    <div className="text-xs font-bold mb-1" style={{ color: "#00d4ff" }}>100 Mbps</div>
+                    <div className="w-24 h-1 rounded-full" style={{ background: "linear-gradient(90deg, #00d4ff, #00d4ff)" }} />
+                    <div className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-mono)" }}>3.2 km</div>
+                  </div>
+
+                  {/* Sede 2 */}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center font-bold text-xl mb-2 animate-pulse-glow"
+                      style={{ background: "rgba(127,255,0,0.2)", color: "#7fff00", fontFamily: "var(--font-mono)" }}
+                    >
+                      S2
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#7fff00" }}>Campus U</span>
+                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>600 hosts</span>
+                  </div>
+
+                  {/* Connection 2-3 */}
+                  <div className="flex flex-col items-center flex-1 md:flex-none">
+                    <div className="text-xs font-bold mb-1" style={{ color: "#7fff00" }}>100 Mbps</div>
+                    <div className="w-24 h-1 rounded-full" style={{ background: "linear-gradient(90deg, #7fff00, #7fff00)" }} />
+                    <div className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "var(--font-mono)" }}>2.1 km</div>
+                  </div>
+
+                  {/* Sede 3 */}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-16 h-16 rounded-lg flex items-center justify-center font-bold text-xl mb-2 animate-pulse-glow"
+                      style={{ background: "rgba(245,158,11,0.2)", color: "#f59e0b", fontFamily: "var(--font-mono)" }}
+                    >
+                      S3
+                    </div>
+                    <span className="text-xs font-semibold" style={{ color: "#f59e0b" }}>AV68</span>
+                    <span className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>400 hosts</span>
+                  </div>
+                </div>
+                <div className="text-xs text-center mt-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  <span style={{ color: "#f59e0b" }}>Enlace de respaldo (Sede 1 ↔ Sede 3): 50 Mbps MPLS VPN — 4.8 km</span>
+                </div>
+              </div>
+
+              {/* WAN Links Table */}
+              <div className="card-blueprint rounded-xl p-6">
+                <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)", color: "rgba(255,255,255,0.8)" }}>
+                  Detalle de Enlaces
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid rgba(0,212,255,0.2)" }}>
+                        {["Enlace", "Distancia", "Tecnología", "Ancho de Banda", "Latencia", "Rol", "Protocolos"].map((h) => (
+                          <th key={h} className="text-left py-3 pr-4 font-medium" style={{ color: "#00d4ff", fontFamily: "var(--font-body)" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {NETWORK_DATA.wanLinks.map((link) => (
+                        <tr
+                          key={link.id}
+                          className="transition-colors duration-200"
+                          style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", borderLeft: `3px solid ${link.color}` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = `${link.color}08`)}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          <td className="py-3 pr-4 font-semibold" style={{ color: link.color, fontFamily: "var(--font-display)" }}>{link.name}</td>
+                          <td className="py-3 pr-4" style={{ fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.7)" }}>{link.distance} km</td>
+                          <td className="py-3 pr-4" style={{ color: "rgba(255,255,255,0.7)" }}>{link.technology}</td>
+                          <td className="py-3 pr-4">
+                            <span className="px-2 py-1 rounded text-xs font-medium" style={{ background: `${link.color}22`, color: link.color, fontFamily: "var(--font-mono)" }}>
+                              {link.bandwidth}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4" style={{ fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.7)" }}>{link.latency}</td>
+                          <td className="py-3 pr-4">
+                            <span className="px-2 py-1 rounded text-xs font-medium" style={{ background: link.redundancy === "Primario" ? "rgba(127,255,0,0.2)" : "rgba(245,158,11,0.2)", color: link.redundancy === "Primario" ? "#7fff00" : "#f59e0b" }}>
+                              {link.redundancy}
+                            </span>
+                          </td>
+                          <td className="py-3 pr-4" style={{ fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.6)" }}>{link.protocols.join(", ")}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* WAN Link Details Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {NETWORK_DATA.wanLinks.map((link) => (
+                  <div key={link.id} className="card-blueprint rounded-xl p-5" style={{ borderColor: `${link.color}33` }}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h4 className="text-sm font-semibold mb-1" style={{ fontFamily: "var(--font-display)", color: link.color }}>
+                          {link.name}
+                        </h4>
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{link.from} → {link.to}</p>
+                      </div>
+                      <div
+                        className="w-8 h-8 rounded flex items-center justify-center text-xs font-bold"
+                        style={{ background: `${link.color}22`, color: link.color }}
+                      >
+                        ↔
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>Distancia</div>
+                        <div className="text-sm font-bold" style={{ fontFamily: "var(--font-mono)", color: link.color }}>{link.distance} km</div>
+                      </div>
+                      <div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>Tecnología</div>
+                        <div className="text-sm font-semibold" style={{ color: "rgba(255,255,255,0.8)" }}>{link.technology}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>Ancho de Banda</div>
+                        <div className="text-sm font-bold" style={{ fontFamily: "var(--font-mono)", color: link.color }}>{link.bandwidth}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>Latencia</div>
+                        <div className="text-sm font-bold" style={{ fontFamily: "var(--font-mono)", color: link.color }}>{link.latency}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-body)" }}>Rol</div>
+                        <span className="inline-block px-2 py-1 rounded text-xs font-medium mt-1" style={{ background: link.redundancy === "Primario" ? "rgba(127,255,0,0.2)" : "rgba(245,158,11,0.2)", color: link.redundancy === "Primario" ? "#7fff00" : "#f59e0b" }}>
+                          {link.redundancy}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+                        <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{link.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* WAN Best Practices */}
+              <div className="card-blueprint rounded-xl p-6">
+                <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)", color: "rgba(255,255,255,0.8)" }}>
+                  Consideraciones de Diseño WAN
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  {[
+                    { title: "Redundancia Activa-Activa", desc: "Los dos enlaces primarios (Sede 1-2 y Sede 2-3) funcionan en paralelo con OSPF/BGP para balanceo de carga automático y failover inmediato." },
+                    { title: "Enlace de Respaldo", desc: "El enlace MPLS VPN (Sede 1-3) actúa como respaldo en caso de falla de los enlaces primarios, garantizando conectividad en topología de malla parcial." },
+                    { title: "QoS Priorizado", desc: "Tráfico de voz (VLAN 20) y CCTV (VLAN 30) tienen prioridad sobre datos (VLAN 10) mediante políticas de QoS en cada router WAN." },
+                    { title: "Monitoreo Continuo", desc: "SNMP y NetFlow en cada router WAN permiten monitorear ancho de banda utilizado, latencia y pérdida de paquetes en tiempo real." },
+                  ].map((item, i) => (
+                    <div key={i} className="rounded-lg p-4" style={{ background: "rgba(0,212,255,0.05)", border: "1px solid rgba(0,212,255,0.1)" }}>
+                      <div className="font-semibold mb-2" style={{ color: "#00d4ff", fontFamily: "var(--font-display)" }}>{item.title}</div>
+                      <p>{item.desc}</p>
                     </div>
                   ))}
                 </div>
