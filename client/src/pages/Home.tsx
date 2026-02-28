@@ -19,7 +19,7 @@ import {
   Pie,
   Legend,
 } from "recharts";
-import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe } from "lucide-react";
+import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText } from "lucide-react";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -400,7 +400,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Home() {
   const [activeSede, setActiveSede] = useState(0);
-  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment" | "wan">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment" | "wan" | "configs">("overview");
 
   const selectedSede = NETWORK_DATA.sedes[activeSede];
   const totalHosts = NETWORK_DATA.sedes.reduce((s, x) => s + x.hosts, 0);
@@ -424,6 +424,7 @@ export default function Home() {
     { id: "vlans", label: "Plan de VLANs", icon: <Database size={16} /> },
     { id: "equipment", label: "Equipos de Red", icon: <Server size={16} /> },
     { id: "wan", label: "Enlaces WAN", icon: <Wifi size={16} /> },
+    { id: "configs", label: "Configuraciones", icon: <Code size={16} /> },
   ] as const;
 
   return (
@@ -1063,6 +1064,97 @@ export default function Home() {
                       <p>{item.desc}</p>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── CONFIGURATIONS ── */}
+          {activeSection === "configs" && (
+            <div className="space-y-6 animate-fade-in-up">
+              <div>
+                <h2 className="text-xl font-bold mb-1" style={{ fontFamily: "var(--font-display)", color: "white" }}>
+                  Configuraciones de Switches y Routers
+                </h2>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Ejemplos de configuración para Cisco, Huawei, Juniper y Arista.
+                </p>
+              </div>
+
+              {/* Vendor Selection */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { name: "Cisco IOS", color: "#00d4ff", desc: "Catalyst 3650 / ISR 4331" },
+                  { name: "Huawei VRP", color: "#7fff00", desc: "CloudEngine / NE40E" },
+                  { name: "Juniper Junos", color: "#f59e0b", desc: "EX4300" },
+                  { name: "Arista EOS", color: "#a78bfa", desc: "DCS-7050SX3" },
+                ].map((vendor, i) => (
+                  <div key={i} className="card-blueprint rounded-lg p-4 cursor-pointer transition-all duration-200 hover:-translate-y-1" style={{ borderColor: `${vendor.color}33` }}>
+                    <div className="font-semibold text-sm mb-1" style={{ fontFamily: "var(--font-display)", color: vendor.color }}>{vendor.name}</div>
+                    <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{vendor.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Configuration Sections */}
+              <div className="card-blueprint rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <Code size={20} color="#00d4ff" />
+                  <h3 className="text-lg font-semibold" style={{ fontFamily: "var(--font-display)", color: "white" }}>Cisco IOS - Switch L3</h3>
+                </div>
+                <div className="bg-black rounded-lg p-4 font-mono text-xs overflow-x-auto" style={{ color: "#7fff00", lineHeight: "1.6" }}>
+                  <pre>{`! Configuracion de Switch Cisco Catalyst 3650
+! Sede 1: Teusaquillo (172.16.0.0/21)
+
+hostname SW-SEDE1-TEUS
+enable password 7 [encrypted_password]
+
+vlan 10
+ name VLAN-DATOS
+vlan 20
+ name VLAN-VOZ
+
+interface Vlan10
+ description VLAN-DATOS-SEDE1
+ ip address 172.16.0.1 255.255.248.0
+ no shutdown
+
+interface range GigabitEthernet1/0/1-24
+ description ACCESS-DATOS
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+
+router ospf 1
+ router-id 172.16.0.1
+ network 172.16.0.0 0.0.7.255 area 0
+
+write memory`}</pre>
+                </div>
+              </div>
+
+              {/* Documentation Link */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(127,255,0,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <FileText size={24} color="#7fff00" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#7fff00" }}>
+                      Documentacion Completa
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Descarga la documentacion completa con configuraciones detalladas para todas las marcas (Cisco, Huawei, Juniper, Arista), incluyendo VLSM, VLANs, OSPF, BGP, QoS y ACLs.
+                    </p>
+                    <a
+                      href="/network-configs.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(127,255,0,0.2)", color: "#7fff00" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
+                    >
+                      Descargar Configuraciones
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
