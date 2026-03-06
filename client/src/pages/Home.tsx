@@ -400,7 +400,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function Home() {
   const [activeSede, setActiveSede] = useState(0);
-  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment" | "wan" | "configs">("overview");
+  const [activeSection, setActiveSection] = useState<"overview" | "subnets" | "vlans" | "equipment" | "wan" | "configs" | "inventory">("overview");
 
   const selectedSede = NETWORK_DATA.sedes[activeSede];
   const totalHosts = NETWORK_DATA.sedes.reduce((s, x) => s + x.hosts, 0);
@@ -425,6 +425,7 @@ export default function Home() {
     { id: "equipment", label: "Equipos de Red", icon: <Server size={16} /> },
     { id: "wan", label: "Enlaces WAN", icon: <Wifi size={16} /> },
     { id: "configs", label: "Configuraciones", icon: <Code size={16} /> },
+    { id: "inventory", label: "Inventario Completo", icon: <Monitor size={16} /> },
   ] as const;
 
   return (
@@ -1199,6 +1200,139 @@ save`}</pre>
                       onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
                     >
                       Descargar Configuraciones Generales
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── INVENTORY ── */}
+          {activeSection === "inventory" && (
+            <div className="space-y-6 animate-fade-in-up">
+              <div>
+                <h2 className="text-xl font-bold mb-1" style={{ fontFamily: "var(--font-display)", color: "white" }}>
+                  Inventario Completo de Equipos
+                </h2>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                  Lista detallada de todos los equipos necesarios para la infraestructura de red banda ancha (3.500+ equipos, $3.5M USD).
+                </p>
+              </div>
+
+              {/* Equipment Categories Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { category: "Switches L3", count: 3, color: "#00d4ff", icon: "🔀" },
+                  { category: "Routers WAN", count: 3, color: "#7fff00", icon: "📡" },
+                  { category: "Firewalls", count: 2, color: "#f59e0b", icon: "🛡️" },
+                  { category: "Servidores", count: 6, color: "#a78bfa", icon: "🖥️" },
+                  { category: "Puntos WiFi", count: 110, color: "#06b6d4", icon: "📶" },
+                  { category: "Teléfonos IP", count: 500, color: "#ec4899", icon: "☎️" },
+                  { category: "Cámaras CCTV", count: 160, color: "#f97316", icon: "📷" },
+                  { category: "UPS/Generadores", count: 6, color: "#14b8a6", icon: "⚡" },
+                  { category: "Cableado", count: "~5km", color: "#8b5cf6", icon: "🔌" },
+                ].map((item, i) => (
+                  <div key={i} className="card-blueprint rounded-lg p-4" style={{ borderColor: `${item.color}33` }}>
+                    <div className="text-3xl mb-2">{item.icon}</div>
+                    <div className="font-semibold text-sm mb-1" style={{ fontFamily: "var(--font-display)", color: item.color }}>
+                      {item.category}
+                    </div>
+                    <div className="text-lg font-bold" style={{ color: "white" }}>{item.count}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Budget Summary */}
+              <div className="card-blueprint rounded-xl p-6">
+                <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)", color: "rgba(255,255,255,0.8)" }}>
+                  Presupuesto Estimado
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    {[
+                      { label: "Equipos de Red", value: "$1.2M", pct: 34 },
+                      { label: "Servidores/Storage", value: "$271K", pct: 8 },
+                      { label: "Telefonía IP", value: "$155K", pct: 4 },
+                      { label: "CCTV", value: "$285K", pct: 8 },
+                      { label: "Energía", value: "$200K", pct: 6 },
+                    ].map((item, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span style={{ color: "rgba(255,255,255,0.6)" }}>{item.label}</span>
+                          <span style={{ color: "#00d4ff", fontFamily: "var(--font-mono)" }}>{item.value}</span>
+                        </div>
+                        <div className="h-2 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                          <div
+                            className="h-2 rounded-full"
+                            style={{
+                              width: `${item.pct}%`,
+                              background: "linear-gradient(90deg, #00d4ff, #7fff00)",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-lg p-4" style={{ background: "rgba(127,255,0,0.08)", border: "1px solid rgba(127,255,0,0.2)" }}>
+                    <div className="text-xs mb-2" style={{ color: "rgba(255,255,255,0.4)" }}>INVERSIÓN TOTAL</div>
+                    <div className="text-3xl font-bold mb-3" style={{ color: "#7fff00", fontFamily: "var(--font-display)" }}>$3.5M USD</div>
+                    <div className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      <div>• 3.500+ equipos</div>
+                      <div>• 19 semanas implementación</div>
+                      <div>• Incluye licencias 3 años</div>
+                      <div>• Contingencia 10%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Implementation Timeline */}
+              <div className="card-blueprint rounded-xl p-6">
+                <h3 className="text-sm font-semibold mb-4" style={{ fontFamily: "var(--font-display)", color: "rgba(255,255,255,0.8)" }}>
+                  Cronograma de Implementación
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { phase: "Fase 1", duration: "4 sem", task: "Adquisición e instalación cableado", color: "#00d4ff" },
+                    { phase: "Fase 2", duration: "6 sem", task: "Switches, routers, firewalls", color: "#7fff00" },
+                    { phase: "Fase 3", duration: "4 sem", task: "Configuración OSPF, QoS, seguridad", color: "#f59e0b" },
+                    { phase: "Fase 4", duration: "3 sem", task: "WiFi, telefonía, CCTV", color: "#a78bfa" },
+                    { phase: "Fase 5", duration: "2 sem", task: "Pruebas, capacitación, go-live", color: "#06b6d4" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <div className="w-24" style={{ fontFamily: "var(--font-mono)", color: item.color, fontSize: "0.85rem" }}>
+                        <div className="font-bold">{item.phase}</div>
+                        <div style={{ color: "rgba(255,255,255,0.4)" }}>{item.duration}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="h-8 rounded-lg flex items-center px-3" style={{ background: `${item.color}15`, border: `1px solid ${item.color}33` }}>
+                          <span className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{item.task}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Download Complete Inventory */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(127,255,0,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <FileText size={24} color="#7fff00" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#7fff00" }}>
+                      Inventario Completo de Equipos
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Documento detallado con especificaciones técnicas, precios unitarios, proveedores, cronograma y recomendaciones de implementación para todos los 3.500+ equipos.
+                    </p>
+                    <a
+                      href="/equipos-red-completa.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(127,255,0,0.2)", color: "#7fff00" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
+                    >
+                      Descargar Inventario Completo (Markdown)
                     </a>
                   </div>
                 </div>
