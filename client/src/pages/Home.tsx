@@ -1134,6 +1134,52 @@ write memory`}</pre>
                 </div>
               </div>
 
+              {/* Huawei Configuration Section */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(127,255,0,0.33)" }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <Code size={20} color="#7fff00" />
+                  <h3 className="text-lg font-semibold" style={{ fontFamily: "var(--font-display)", color: "white" }}>Huawei VRP - Configuración Completa</h3>
+                </div>
+                <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  Configuración detallada para CloudEngine 6800 y 5800 con VLSM, VLANs, OSPF, QoS y redundancia.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { title: "Sede 1 (Teusaquillo)", hosts: "1.600", model: "CE 6800" },
+                    { title: "Sede 2 (Campus U)", hosts: "600", model: "CE 6800" },
+                    { title: "Sede 3 (AV68)", hosts: "400", model: "CE 5800" },
+                  ].map((sede, i) => (
+                    <div key={i} className="rounded-lg p-3" style={{ background: "rgba(127,255,0,0.08)", border: "1px solid rgba(127,255,0,0.2)" }}>
+                      <div className="font-semibold text-xs mb-1" style={{ color: "#7fff00" }}>{sede.title}</div>
+                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{sede.hosts} hosts • {sede.model}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-black rounded-lg p-4 font-mono text-xs overflow-x-auto mb-4" style={{ color: "#7fff00", lineHeight: "1.6" }}>
+                  <pre>{`# Configuracion rapida - Sede 1
+system-view
+sysName SW-SEDE1-TEUS
+vlan batch 10 20 30 40 99
+interface Vlanif10
+ ip address 172.16.0.1 255.255.248.0
+interface Vlanif20
+ ip address 172.16.1.1 255.255.248.0
+ospf 1 router-id 172.16.0.254
+area 0.0.0.0
+network 172.16.0.0 0.0.7.255 area 0.0.0.0
+save`}</pre>
+                </div>
+                <a
+                  href="/huawei-switch-configs.md"
+                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                  style={{ background: "rgba(127,255,0,0.2)", color: "#7fff00" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.3)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
+                >
+                  Descargar Configuracion Huawei Completa (Markdown)
+                </a>
+              </div>
+
               {/* Documentation Link */}
               <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(127,255,0,0.33)" }}>
                 <div className="flex items-start gap-4">
@@ -1152,7 +1198,7 @@ write memory`}</pre>
                       onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.3)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
                     >
-                      Descargar Configuraciones
+                      Descargar Configuraciones Generales
                     </a>
                   </div>
                 </div>
