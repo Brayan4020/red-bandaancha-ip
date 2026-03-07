@@ -19,7 +19,7 @@ import {
   Pie,
   Legend,
 } from "recharts";
-import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText } from "lucide-react";
+import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText, BookOpen } from "lucide-react";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -1179,6 +1179,30 @@ save`}</pre>
                 >
                   Descargar Configuracion Huawei Completa (Markdown)
                 </a>
+              </div>
+
+              {/* Commands Guide */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(0,212,255,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <BookOpen size={24} color="#00d4ff" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#00d4ff" }}>
+                      Guia Completa de Comandos Huawei
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Explicacion detallada de cada comando VRP: sistema, interfaces, VLANs, OSPF, QoS, DHCP, seguridad, verificacion y troubleshooting con ejemplos practicos.
+                    </p>
+                    <a
+                      href="/guia-comandos-huawei.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(0,212,255,0.2)", color: "#00d4ff" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.2)")}
+                    >
+                      Descargar Guia de Comandos
+                    </a>
+                  </div>
+                </div>
               </div>
 
               {/* Documentation Link */}
