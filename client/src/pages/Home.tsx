@@ -688,6 +688,30 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+
+              {/* Architecture Document */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(165,114,251,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <Globe size={24} color="#a572fb" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#a572fb" }}>
+                      Arquitectura e Infraestructura
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Documento completo de la arquitectura de 3 capas: topología WAN, redundancia, seguridad perimetral, VLANs, OSPF, QoS, monitoreo y escalabilidad.
+                    </p>
+                    <a
+                      href="/arquitectura-infraestructura.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(165,114,251,0.2)", color: "#a572fb" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(165,114,251,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(165,114,251,0.2)")}
+                    >
+                      Descargar Documento de Arquitectura
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
