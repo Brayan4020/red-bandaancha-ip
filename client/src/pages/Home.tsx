@@ -1229,6 +1229,38 @@ save`}</pre>
                 </div>
               </div>
 
+              {/* Fortinet Configuration Section */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(236,72,153,0.33)" }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <Code size={20} color="#ec4899" />
+                  <h3 className="text-lg font-semibold" style={{ fontFamily: "var(--font-display)", color: "white" }}>Fortinet FortiGate - Firewall Empresarial</h3>
+                </div>
+                <p className="text-xs mb-4" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  Configuracion completa de firewalls FortiGate con politicas de seguridad, VPN IPSec, redundancia HA, QoS y deteccion de intrusiones.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  {[
+                    { title: "Sede 1 (Teusaquillo)", model: "FG 3100D", throughput: "100 Gbps" },
+                    { title: "Sede 2 (Campus U)", model: "FG 1500D", throughput: "50 Gbps" },
+                    { title: "Sede 3 (AV68)", model: "FG 600D", throughput: "20 Gbps" },
+                  ].map((sede, i) => (
+                    <div key={i} className="rounded-lg p-3" style={{ background: "rgba(236,72,153,0.08)", border: "1px solid rgba(236,72,153,0.2)" }}>
+                      <div className="font-semibold text-xs mb-1" style={{ color: "#ec4899" }}>{sede.title}</div>
+                      <div className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{sede.model} • {sede.throughput}</div>
+                    </div>
+                  ))}
+                </div>
+                <a
+                  href="/configuraciones-fortinet.md"
+                  className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                  style={{ background: "rgba(236,72,153,0.2)", color: "#ec4899" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(236,72,153,0.3)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(236,72,153,0.2)")}
+                >
+                  Descargar Configuraciones Fortinet
+                </a>
+              </div>
+
               {/* Documentation Link */}
               <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(127,255,0,0.33)" }}>
                 <div className="flex items-start gap-4">
