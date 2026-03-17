@@ -712,6 +712,30 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {/* IP Planning Document */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(34,197,94,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <Database size={24} color="#22c55e" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#22c55e" }}>
+                      IP Planning Completo
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Documento exhaustivo con esquema VLSM, asignación de IPs por dispositivo, DHCP pools, subredes por VLAN, reservas de espacio y capacidad de expansión para 5 años.
+                    </p>
+                    <a
+                      href="/ip-planning-completo.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(34,197,94,0.2)", color: "#22c55e" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.2)")}
+                    >
+                      Descargar IP Planning
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
