@@ -1,11 +1,4 @@
-# 🌐 Diseño de Red Banda Ancha — Bogotá, Colombia
-
-**Dashboard interactivo de planificación, configuración y documentación de infraestructura de red para 3 sedes con 2.600 usuarios**
-
-[![Estado](https://img.shields.io/badge/Estado-Activo-brightgreen)](https://github.com)
-[![Versión](https://img.shields.io/badge/Versión-1.0-blue)](https://github.com)
-[![Licencia](https://img.shields.io/badge/Licencia-MIT-green)](LICENSE)
-[![Documentación](https://img.shields.io/badge/Documentación-Completa-success)](docs/)
+ 🌐 Diseño de Red Banda Ancha — Bogotá, Colombia
 
 ---
 
