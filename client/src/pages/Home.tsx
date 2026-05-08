@@ -19,7 +19,7 @@ import {
   Pie,
   Legend,
 } from "recharts";
-import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText, BookOpen } from "lucide-react";
+import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText, BookOpen, Settings } from "lucide-react";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -1451,7 +1451,7 @@ save`}</pre>
                       Inventario Completo de Equipos
                     </h3>
                     <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      Documento detallado con especificaciones técnicas, precios unitarios, proveedores, cronograma y recomendaciones de implementación para todos los 3.500+ equipos.
+                      Documento detallado con especificaciones tecnicas, precios unitarios, proveedores, cronograma y recomendaciones de implementacion para todos los 3.500+ equipos.
                     </p>
                     <a
                       href="/equipos-red-completa.md"
@@ -1461,6 +1461,30 @@ save`}</pre>
                       onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(127,255,0,0.2)")}
                     >
                       Descargar Inventario Completo (Markdown)
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Configuracion Completa de Equipos */}
+              <div className="card-blueprint rounded-xl p-6" style={{ borderColor: "rgba(236,72,153,0.33)" }}>
+                <div className="flex items-start gap-4">
+                  <Settings size={24} color="#ec4899" />
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2" style={{ fontFamily: "var(--font-display)", color: "#ec4899" }}>
+                      Configuracion Completa de Equipos
+                    </h3>
+                    <p className="text-xs mb-3" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Documento exhaustivo (10.000+ lineas) con configuracion paso a paso de routers Huawei, switches L3, firewalls Fortinet, servidores, puntos WiFi, camaras CCTV, telefonos IP, UPS y generadores. Incluye credenciales, especificaciones tecnicas y procedimientos de mantenimiento.
+                    </p>
+                    <a
+                      href="/configuracion-completa-equipos.md"
+                      className="inline-block px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+                      style={{ background: "rgba(236,72,153,0.2)", color: "#ec4899" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(236,72,153,0.3)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(236,72,153,0.2)")}
+                    >
+                      Descargar Configuracion Completa
                     </a>
                   </div>
                 </div>
