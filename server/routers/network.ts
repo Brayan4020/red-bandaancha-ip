@@ -2,6 +2,8 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getAllNetworkDevices, getNetworkDeviceById, createNetworkDevice, updateDeviceStatus, getLatestDeviceConfig, saveDeviceConfig, createAutomationTask, getAutomationTask, updateAutomationTaskStatus, createAiRecommendation, getNewRecommendations } from "../db";
 import { testDeviceConnectivity, NetworkDeviceConnector } from "../network/device-connector";
+import { generateConfiguration } from "../network/config-generator";
+import { quickAudit } from "../network/config-auditor";
 
 export const networkRouter = router({
   // ─── Device Management ─────────────────────────────────────────────────
@@ -262,6 +264,55 @@ export const networkRouter = router({
         });
 
         return { success: true, message: "Recommendation created" };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  // --- Configuration Generation & Audit ---
+
+  /**
+   * Generate configuration commands for a device
+   */
+  generateConfig: protectedProcedure
+    .input(
+      z.object({
+        siteId: z.enum(["sede1", "sede2", "sede3"]),
+        vendor: z.enum(["huawei", "cisco", "fortinet"]),
+        deviceType: z.enum(["switch", "router", "firewall"]),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const config = generateConfiguration(input);
+        return { success: true, config };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  /**
+   * Audit configuration against best practices and VLSM
+   */
+  auditConfig: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.string(),
+        commands: z.array(z.string()),
+        sections: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string(),
+            commands: z.array(z.string()),
+          })
+        ),
+        site: z.enum(["sede1", "sede2", "sede3"]),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const auditResult = quickAudit(input);
+        return { success: true, audit: auditResult };
       } catch (error) {
         return { success: false, error: String(error) };
       }
