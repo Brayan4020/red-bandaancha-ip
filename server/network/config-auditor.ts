@@ -201,9 +201,26 @@ Format your response as JSON with this structure:
 
     // Parse LLM response
     const content = response.choices[0].message.content;
-    const auditData = JSON.parse(
-      typeof content === "string" ? content : JSON.stringify(content)
-    );
+    let auditData;
+    
+    try {
+      if (typeof content === "string") {
+        // Clean HTML entities and parse
+        const cleanContent = content
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&amp;/g, "&");
+        auditData = JSON.parse(cleanContent);
+      } else {
+        auditData = content;
+      }
+    } catch (parseError) {
+      console.error("Failed to parse audit response:", parseError);
+      // Return quick audit as fallback
+      return quickAudit(request);
+    }
 
     // Calculate score
     const criticalCount = auditData.issues.filter(

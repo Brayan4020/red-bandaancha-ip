@@ -19,7 +19,7 @@ import {
   Pie,
   Legend,
 } from "recharts";
-import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText, BookOpen, Settings } from "lucide-react";
+import { Network, Server, Wifi, Monitor, Copy, Check, ChevronRight, Activity, Database, Globe, Code, FileText, BookOpen, Settings, Zap } from "lucide-react";
 
 // ─── Data ───────────────────────────────────────────────────────────────────
 
@@ -505,6 +505,20 @@ export default function Home() {
             <div>Dist. entre sedes: 6.29 km</div>
             <div>Total hosts: {totalHosts.toLocaleString()}</div>
           </div>
+          <a
+            href="/generador-configuraciones"
+            className="mt-4 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+            style={{
+              background: "rgba(0,212,255,0.15)",
+              color: "#00d4ff",
+              textDecoration: "none"
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.25)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,212,255,0.15)")}
+          >
+            <Code size={14} />
+            Generador
+          </a>
         </div>
       </aside>
 
