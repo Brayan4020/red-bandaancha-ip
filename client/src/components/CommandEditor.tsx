@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Copy, Check, AlertCircle } from "lucide-react";
+import { SyntaxValidator, ValidationResult } from "./SyntaxValidator";
 
 export interface CommandEditorProps {
   commands?: string[];
@@ -30,42 +31,34 @@ export function CommandEditor({
   const [editedCommands, setEditedCommands] = useState((commands || []).join("\n"));
   const [selectedSection, setSelectedSection] = useState<number>(0);
   const [copied, setCopied] = useState(false);
-  const [errors, setErrors] = useState<{ line: number; message: string }[]>([]);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
 
-  const handleSaveChanges = useCallback(() => {
-    const newCommands = editedCommands
-      .split("\n")
-      .map((cmd) => cmd.trim())
-      .filter((cmd) => cmd.length > 0);
+  // Real-time validation effect
+  useEffect(() => {
+    const validateInRealTime = async () => {
+      setIsValidating(true);
+      try {
+        const cmds = editedCommands
+          .split("\n")
+          .map((cmd) => cmd.trim())
+          .filter((cmd) => cmd.length > 0);
 
-    onCommandsChange(newCommands);
-    setEditMode(false);
-    validateCommands(newCommands);
-  }, [editedCommands, onCommandsChange]);
+        const validationResult = performValidation(vendor, cmds);
+        setValidation(validationResult);
+      } finally {
+        setIsValidating(false);
+      }
+    };
 
-  const handleAddCommand = useCallback(() => {
-    const newCommands = [...commands, ""];
-    onCommandsChange(newCommands);
-    setEditedCommands(newCommands.join("\n"));
-  }, [commands, onCommandsChange]);
+    // Debounce validation to avoid too many updates
+    const timer = setTimeout(validateInRealTime, 500);
+    return () => clearTimeout(timer);
+  }, [editedCommands, vendor]);
 
-  const handleRemoveCommand = useCallback(
-    (index: number) => {
-      const newCommands = commands.filter((_, i) => i !== index);
-      onCommandsChange(newCommands);
-      setEditedCommands(newCommands.join("\n"));
-    },
-    [commands, onCommandsChange]
-  );
-
-  const handleCopyAll = useCallback(() => {
-    navigator.clipboard.writeText(commands.join("\n"));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [commands]);
-
-  const validateCommands = (cmds: string[]) => {
-    const newErrors: { line: number; message: string }[] = [];
+  const performValidation = (vendor: string, cmds: string[]): ValidationResult => {
+    const errors: any[] = [];
+    const warnings: any[] = [];
 
     cmds.forEach((cmd, index) => {
       if (vendor === "cisco") {
@@ -75,23 +68,41 @@ export function CommandEditor({
           if (match) {
             const parts = match[0].split(".").map(Number);
             if (parts.some((p) => p > 255)) {
-              newErrors.push({
+              errors.push({
                 line: index + 1,
+                column: cmd.indexOf(match[0]),
+                severity: "error",
                 message: "Invalid IP address octet (must be 0-255)",
+                suggestion: "Use valid IP octets (0-255)",
+                command: cmd,
               });
             }
           }
         }
-        if (cmd.includes("vlan") && cmd.match(/vlan\s+(\d+)/)) {
-          const match = cmd.match(/vlan\s+(\d+)/);
-          if (match) {
-            const vlanId = parseInt(match[1]);
-            if (vlanId < 1 || vlanId > 4094) {
-              newErrors.push({
-                line: index + 1,
-                message: "Invalid VLAN ID (must be 1-4094)",
-              });
-            }
+
+        // Check for incomplete commands
+        if (cmd.endsWith("ip address")) {
+          errors.push({
+            line: index + 1,
+            column: cmd.length,
+            severity: "error",
+            message: "Incomplete command: missing IP address and mask",
+            suggestion: "Add IP address and subnet mask (e.g., 192.168.1.1 255.255.255.0)",
+            command: cmd,
+          });
+        }
+
+        // Check for interface configuration
+        if (cmd.startsWith("interface")) {
+          if (!cmd.match(/^interface\s+(Ethernet|FastEthernet|GigabitEthernet|Vlan)\d+/i)) {
+            warnings.push({
+              line: index + 1,
+              column: 10,
+              severity: "warning",
+              message: "Unknown interface type",
+              suggestion: "Use valid interface (e.g., Ethernet0, GigabitEthernet0/0/1)",
+              command: cmd,
+            });
           }
         }
       } else if (vendor === "huawei") {
@@ -101,216 +112,236 @@ export function CommandEditor({
           if (match) {
             const parts = match[0].split(".").map(Number);
             if (parts.some((p) => p > 255)) {
-              newErrors.push({
+              errors.push({
                 line: index + 1,
+                column: cmd.indexOf(match[0]),
+                severity: "error",
                 message: "Invalid IP address octet (must be 0-255)",
+                suggestion: "Use valid IP octets (0-255)",
+                command: cmd,
               });
             }
           }
         }
-        if (cmd.includes("vlan") && cmd.match(/vlan\s+(\d+)/)) {
-          const match = cmd.match(/vlan\s+(\d+)/);
-          if (match) {
-            const vlanId = parseInt(match[1]);
-            if (vlanId < 1 || vlanId > 4094) {
-              newErrors.push({
-                line: index + 1,
-                message: "Invalid VLAN ID (must be 1-4094)",
-              });
-            }
-          }
+
+        // Check for system-view requirement
+        if (
+          (cmd.startsWith("interface") ||
+            cmd.startsWith("router") ||
+            cmd.startsWith("vlan")) &&
+          !cmd.includes("system-view")
+        ) {
+          warnings.push({
+            line: index + 1,
+            column: 0,
+            severity: "warning",
+            message: "Command should be executed in system-view context",
+            suggestion: "Ensure 'system-view' is called before this command",
+            command: cmd,
+          });
         }
       } else if (vendor === "fortinet") {
         // Fortinet validation
-        if (cmd.includes("set ip") && cmd.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)/)) {
-          const match = cmd.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)/);
-          if (match) {
-            const parts = match[0].split(".").map(Number);
-            if (parts.some((p) => p > 255)) {
-              newErrors.push({
-                line: index + 1,
-                message: "Invalid IP address octet (must be 0-255)",
-              });
-            }
+        if (cmd.startsWith("config")) {
+          if (!cmd.match(/^config\s+\w+/i)) {
+            errors.push({
+              line: index + 1,
+              column: 0,
+              severity: "error",
+              message: "Invalid config block syntax",
+              suggestion: "Use format: config <section> (e.g., config system global)",
+              command: cmd,
+            });
+          }
+        }
+
+        if (cmd.startsWith("set")) {
+          if (!cmd.match(/^set\s+\w+\s+/i)) {
+            errors.push({
+              line: index + 1,
+              column: 0,
+              severity: "error",
+              message: "Invalid set command syntax",
+              suggestion: "Use format: set <parameter> <value>",
+              command: cmd,
+            });
+          }
+        }
+
+        // Check for IP address validation
+        const ipMatch = cmd.match(/set\s+ip\s+(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/i);
+        if (ipMatch) {
+          const parts = [ipMatch[1], ipMatch[2], ipMatch[3], ipMatch[4]].map(Number);
+          if (parts.some((p) => p > 255)) {
+            errors.push({
+              line: index + 1,
+              column: cmd.indexOf(ipMatch[0]),
+              severity: "error",
+              message: "Invalid IP address",
+              suggestion: "Use valid IP address (0-255 for each octet)",
+              command: cmd,
+            });
           }
         }
       }
     });
 
-    setErrors(newErrors);
+    const totalErrors = errors.length;
+    const totalWarnings = warnings.length;
+    const score = Math.max(0, 100 - totalErrors * 10 - totalWarnings * 2);
+
+    return {
+      isValid: totalErrors === 0,
+      errors,
+      warnings,
+      summary: {
+        totalErrors,
+        totalWarnings,
+        score,
+      },
+    };
   };
+
+  const handleSaveChanges = useCallback(() => {
+    const newCommands = editedCommands
+      .split("\n")
+      .map((cmd) => cmd.trim())
+      .filter((cmd) => cmd.length > 0);
+
+    onCommandsChange(newCommands);
+    setEditMode(false);
+  }, [editedCommands, onCommandsChange]);
+
+  const handleAddCommand = useCallback(() => {
+    const newCommands = [...(commands || []), ""];
+    onCommandsChange(newCommands);
+    setEditedCommands(newCommands.join("\n"));
+  }, [commands, onCommandsChange]);
+
+  const handleRemoveCommand = useCallback(
+    (index: number) => {
+      const newCommands = (commands || []).filter((_, i) => i !== index);
+      onCommandsChange(newCommands);
+      setEditedCommands(newCommands.join("\n"));
+    },
+    [commands, onCommandsChange]
+  );
+
+  const handleCopyAll = useCallback(() => {
+    navigator.clipboard.writeText((commands || []).join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [commands]);
+
+  const displayCommands = editMode ? editedCommands.split("\n") : (commands || []);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Editar Comandos</h3>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyAll}
-            disabled={commands.length === 0}
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Copiado
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 mr-2" />
-                Copiar Todo
-              </>
-            )}
-          </Button>
-          {!readOnly && (
-            <>
-              {editMode ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => setEditMode(false)}>
-                    Cancelar
-                  </Button>
-                  <Button size="sm" onClick={handleSaveChanges}>
-                    Guardar Cambios
-                  </Button>
-                </>
-              ) : (
-                <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
-                  Editar
-                </Button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      <Tabs defaultValue="editor" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-slate-800">
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="validation">Validación</TabsTrigger>
+          <TabsTrigger value="sections">Secciones</TabsTrigger>
+        </TabsList>
 
-      {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
-          {errors.map((error, idx) => (
-            <div key={idx} className="flex items-start gap-2 text-sm text-red-700">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <div>
-                <strong>Línea {error.line}:</strong> {error.message}
+        {/* Editor Tab */}
+        <TabsContent value="editor" className="space-y-4">
+          {editMode ? (
+            <div className="space-y-2">
+              <Textarea
+                value={editedCommands}
+                onChange={(e) => setEditedCommands(e.target.value)}
+                placeholder="Ingresa los comandos aquí..."
+                className="font-mono text-sm h-96 bg-gray-900 border-slate-600 text-green-400"
+              />
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSaveChanges}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Guardar Cambios
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditMode(false);
+                    setEditedCommands((commands || []).join("\n"));
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {editMode ? (
-        <Card className="p-4">
-          <Textarea
-            value={editedCommands}
-            onChange={(e) => setEditedCommands(e.target.value)}
-            className="font-mono text-sm min-h-96"
-            placeholder="Ingresa los comandos, uno por línea..."
-          />
-        </Card>
-      ) : (
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList>
-            <TabsTrigger value="all">Todos ({commands.length})</TabsTrigger>
-            {sections.map((section, idx) => (
-              <TabsTrigger key={idx} value={`section-${idx}`}>
-                {section.name} ({section.commands.length})
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-2">
-            <Card className="p-4">
-              <div className="space-y-2">
-                {commands.length === 0 ? (
-                  <p className="text-sm text-gray-500">No hay comandos</p>
+          ) : (
+            <div className="space-y-2">
+              <Card className="p-4 bg-gray-900 border-slate-700 max-h-96 overflow-y-auto">
+                {displayCommands.length > 0 ? (
+                  <pre className="text-green-400 text-sm font-mono whitespace-pre-wrap break-words">
+                    {displayCommands.join("\n")}
+                  </pre>
                 ) : (
-                  commands.map((cmd, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between bg-gray-900 p-3 rounded border border-gray-700 hover:bg-gray-800 transition-colors"
-                    >
-                      <code className="text-xs font-mono flex-1 break-all text-green-400">{cmd}</code>
-                      {!readOnly && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveCommand(idx)}
-                          className="ml-2"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))
+                  <p className="text-gray-500 text-sm">No hay comandos</p>
                 )}
+              </Card>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setEditMode(true)}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  Editar Comandos
+                </Button>
+                <Button
+                  onClick={handleCopyAll}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar Todo
+                    </>
+                  )}
+                </Button>
               </div>
-            </Card>
-          </TabsContent>
+            </div>
+          )}
+        </TabsContent>
 
-          {sections.map((section, sectionIdx) => (
-            <TabsContent key={sectionIdx} value={`section-${sectionIdx}`} className="space-y-2">
-              <div className="space-y-2">
-                <div>
-                  <h4 className="font-semibold text-sm">{section.name}</h4>
-                  <p className="text-xs text-gray-600">{section.description}</p>
-                </div>
-                <Card className="p-4">
-                  <div className="space-y-2">
-                    {section.commands.map((cmd, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-gray-900 p-3 rounded border border-gray-700 hover:bg-gray-800 transition-colors"
-                      >
-                        <code className="text-xs font-mono flex-1 break-all text-green-400">{cmd}</code>
-                        {!readOnly && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const globalIdx = commands.indexOf(cmd);
-                              if (globalIdx !== -1) {
-                                handleRemoveCommand(globalIdx);
-                              }
-                            }}
-                            className="ml-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+        {/* Validation Tab */}
+        <TabsContent value="validation" className="space-y-4">
+          <SyntaxValidator validation={validation} isValidating={isValidating} />
+        </TabsContent>
+
+        {/* Sections Tab */}
+        <TabsContent value="sections" className="space-y-4">
+          {(sections || []).length > 0 ? (
+            <div className="space-y-2">
+              {sections.map((section, idx) => (
+                <Card key={idx} className="p-4 bg-slate-800 border-slate-700">
+                  <h4 className="font-semibold text-sm mb-2">{section.name}</h4>
+                  <p className="text-xs text-gray-400 mb-3">{section.description}</p>
+                  <div className="space-y-1">
+                    {section.commands.map((cmd, cmdIdx) => (
+                      <div key={cmdIdx} className="text-xs font-mono text-green-400 bg-gray-900 p-2 rounded">
+                        {cmd}
                       </div>
                     ))}
                   </div>
                 </Card>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-      )}
-
-      {!readOnly && (
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleAddCommand}
-          disabled={editMode}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Agregar Comando
-        </Button>
-      )}
-
-      <div className="text-xs text-gray-600 space-y-1">
-        <p>
-          <strong>Total de comandos:</strong> {commands.length}
-        </p>
-        <p>
-          <strong>Secciones:</strong> {sections.length}
-        </p>
-        {errors.length > 0 && (
-          <p className="text-red-600">
-            <strong>Errores encontrados:</strong> {errors.length}
-          </p>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No hay secciones disponibles</p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
