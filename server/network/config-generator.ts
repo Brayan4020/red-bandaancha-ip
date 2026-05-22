@@ -81,6 +81,18 @@ export function generateHuaweiConfig(
   const sections: ConfigSection[] = [];
   const allCommands: string[] = [];
 
+  // Initial Access Commands
+  const initialCommands = [
+    `system-view`,
+    `undo info-center enable`,
+  ];
+  sections.push({
+    name: "Initial Access",
+    description: "Enter system view mode and disable info-center",
+    commands: initialCommands,
+  });
+  allCommands.push(...initialCommands);
+
   // System Configuration
   const systemCommands = [
     `sysName SW-${input.siteId.toUpperCase()}-${site.name.split(" ")[0]}`,
@@ -505,9 +517,19 @@ export function generateFortinetConfig(
   const sections: ConfigSection[] = [];
   const allCommands: string[] = [];
 
+  // Initial Access Commands
+  const initialCommands = [
+    `config system global`,
+  ];
+  sections.push({
+    name: "Initial Access",
+    description: "Enter global configuration mode",
+    commands: initialCommands,
+  });
+  allCommands.push(...initialCommands);
+
   // System Configuration
   const systemCommands = [
-    `config system global`,
     ` set hostname FW-${input.siteId.toUpperCase()}-${site.name.split(" ")[0]}`,
     ` set timezone UTC`,
     ` set ntp-server 172.16.0.254`,
