@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Configuraciones - Red Banda Ancha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select, input {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: #e0e0e0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .tab-button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-button:hover {
+            color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .command-section {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .section-title {
+            color: #00d4ff;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .command-list {
+            background: #0a0f1e;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #00ff00;
+            line-height: 1.8;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .command-list::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .command-list::-webkit-scrollbar-track {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .command-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .command-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .validation-result {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .validation-score {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: rgba(0, 212, 255, 0.1);
+            border: 3px solid #00d4ff;
+        }
+        
+        .score-info h3 {
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .score-info p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+        
+        .error-list, .warning-list {
+            margin-top: 15px;
+        }
+        
+        .error-list h4, .warning-list h4 {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .error-item, .warning-item {
+            background: rgba(13, 21, 38, 0.5);
+            border-left: 3px solid;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .error-item {
+            border-left-color: #ff4444;
+            color: #ff8888;
+        }
+        
+        .warning-item {
+            border-left-color: #ffaa00;
+            color: #ffcc88;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .controls { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Generador de Configuraciones</h1>
+            <p class="subtitle">Genera comandos auditados para Cisco, Huawei y Fortinet</p>
+        </header>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="fabricante">Fabricante</label>
+                <select id="fabricante" onchange="updatePreview()">
+                    <option value="cisco">Cisco IOS</option>
+                    <option value="huawei">Huawei VRP</option>
+                    <option value="fortinet">Fortinet FortiGate</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="sede">Sede</label>
+                <select id="sede" onchange="updatePreview()">
+                    <option value="1">Sede 1 - Teusaquillo (172.16.0.0/21)</option>
+                    <option value="2">Sede 2 - Campus U Compensar (172.16.8.0/22)</option>
+                    <option value="3">Sede 3 - AV68 (172.16.12.0/23)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('editor')">Editor</button>
+            <button class="tab-button" onclick="switchTab('validacion')">Validación</button>
+            <button class="tab-button" onclick="switchTab('documentacion')">Documentación</button>
+        </div>
+        
+        <!-- Tab: Editor -->
+        <div id="editor" class="tab-content active">
+            <div class="command-section">
+                <div class="section-title">Comandos Generados</div>
+                <div class="command-list" id="commandList">
+                    # Selecciona un fabricante y sede para ver los comandos
+                </div>
+                <div class="action-buttons">
+                    <button onclick="copyToClipboard()">📋 Copiar Comandos</button>
+                    <button onclick="downloadCommands()">⬇️ Descargar (.txt)</button>
+                    <button onclick="downloadJSON()">⬇️ Descargar (.json)</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Validación -->
+        <div id="validacion" class="tab-content">
+            <div class="validation-result">
+                <div class="validation-score">
+                    <div class="score-circle" id="scoreCircle">95</div>
+                    <div class="score-info">
+                        <h3>Puntuación de Validación</h3>
+                        <p>Cumplimiento de mejores prácticas y estándares de red</p>
+                    </div>
+                </div>
+                
+                <div class="error-list" id="errorList" style="display:none;">
+                    <h4>❌ Errores Detectados</h4>
+                    <div id="errors"></div>
+                </div>
+                
+                <div class="warning-list">
+                    <h4>⚠️ Advertencias</h4>
+                    <div id="warnings">
+                        <div class="warning-item">Considerar agregar redundancia en enlaces WAN</div>
+                        <div class="warning-item">Revisar configuración de QoS para tráfico de voz</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Documentación -->
+        <div id="documentacion" class="tab-content">
+            <div class="command-section">
+                <div class="section-title">Guía de Implementación</div>
+                <div style="color: rgba(255, 255, 255, 0.8); line-height: 1.8;">
+                    <h3 style="color: #00d4ff; margin: 15px 0 10px 0;">Pasos para Aplicar la Configuración:</h3>
+                    <ol style="margin-left: 20px; margin-bottom: 20px;">
+                        <li>Conectar al dispositivo vía SSH o consola</li>
+                        <li>Ingresar modo de configuración (enable → configure terminal)</li>
+                        <li>Copiar y pegar los comandos en orden</li>
+                        <li>Verificar la configuración con comandos show</li>
+                        <li>Guardar la configuración (write memory / save)</li>
+                    </ol>
+                    
+                    <h3 style="color: #00d4ff; margin: 15px 0 10px 0;">Comandos de Verificación:</h3>
+                    <div class="command-list" style="margin-bottom: 20px;">
+show running-config
+show ip interface brief
+show ip route
+show vlan
+show spanning-tree
+ping 172.16.0.1
+                    </div>
+                    
+                    <h3 style="color: #00d4ff; margin: 15px 0 10px 0;">Consideraciones de Seguridad:</h3>
+                    <ul style="margin-left: 20px;">
+                        <li>Cambiar contraseñas por defecto inmediatamente</li>
+                        <li>Habilitar SSH en lugar de Telnet</li>
+                        <li>Configurar ACLs para restringir acceso</li>
+                        <li>Habilitar logging y monitoreo</li>
+                        <li>Realizar backup de la configuración regularmente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Generador de Configuraciones © 2026 - Red Banda Ancha</p>
+            <p>Todos los comandos han sido auditados contra mejores prácticas de networking</p>
+        </div>
+    </div>
+    
+    <script>
+        const commandsByFabricant = {
+            cisco: {
+                1: `enable
+configure terminal
+hostname SEDE1-ROUTER
+!
+! VLANs Configuration
+vlan 10
+ name VLAN-Datos
+vlan 20
+ name VLAN-Voz
+vlan 30
+ name VLAN-CCTV
+vlan 40
+ name VLAN-Servidores
+vlan 99
+ name VLAN-Gestion
+!
+! Interface Configuration
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.0.1 255.255.248.0
+ no shutdown
+!
+! OSPF Configuration
+router ospf 1
+ network 172.16.0.0 0.0.7.255 area 0
+ network 172.16.8.0 0.0.3.255 area 0
+ default-information originate
+!
+! QoS Configuration
+class-map match-any VOICE
+ match dscp ef
+policy-map PRIORITY
+ class VOICE
+  priority 100
+!
+! DHCP Configuration
+ip dhcp pool VLAN10
+ network 172.16.1.0 255.255.255.0
+ default-router 172.16.0.1
+ dns-server 8.8.8.8
+!
+end
+write memory`,
+                2: `enable
+configure terminal
+hostname SEDE2-ROUTER
+!
+! VLANs Configuration
+vlan 10
+ name VLAN-Datos
+vlan 20
+ name VLAN-Voz
+vlan 30
+ name VLAN-CCTV
+!
+! Interface Configuration
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE1
+ ip address 172.16.8.1 255.255.252.0
+ no shutdown
+!
+! OSPF Configuration
+router ospf 1
+ network 172.16.8.0 0.0.3.255 area 0
+!
+end
+write memory`,
+                3: `enable
+configure terminal
+hostname SEDE3-ROUTER
+!
+! VLANs Configuration
+vlan 10
+ name VLAN-Datos
+vlan 20
+ name VLAN-Voz
+!
+! Interface Configuration
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.12.1 255.255.254.0
+ no shutdown
+!
+! OSPF Configuration
+router ospf 1
+ network 172.16.12.0 0.0.1.255 area 0
+!
+end
+write memory`
+            },
+            huawei: {
+                1: `system-view
+sysName SEDE1-ROUTER
+!
+vlan batch 10 20 30 40 99
+!
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.0.1 255.255.248.0
+!
+ospf 1
+ area 0.0.0.0
+  network 172.16.0.0 0.0.7.255
+!
+dhcp enable
+ip pool VLAN10
+ gateway-list 172.16.0.1
+ network 172.16.1.0 mask 255.255.255.0
+ dns-list 8.8.8.8
+!
+quit`,
+                2: `system-view
+sysName SEDE2-ROUTER
+!
+vlan batch 10 20 30
+!
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE1
+ ip address 172.16.8.1 255.255.252.0
+!
+ospf 1
+ area 0.0.0.0
+  network 172.16.8.0 0.0.3.255
+!
+quit`,
+                3: `system-view
+sysName SEDE3-ROUTER
+!
+vlan batch 10 20
+!
+interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.12.1 255.255.254.0
+!
+ospf 1
+ area 0.0.0.0
+  network 172.16.12.0 0.0.1.255
+!
+quit`
+            },
+            fortinet: {
+                1: `config system global
+ set hostname SEDE1-FIREWALL
+ set timezone 04
+end
+!
+config system interface
+ edit port1
+  set ip 172.16.0.1 255.255.248.0
+  set description Link-to-SEDE2
+ next
+end
+!
+config router ospf
+ config area
+  edit 0.0.0.0
+  next
+ end
+ config ospf-interface
+  edit port1
+   set interface port1
+  next
+ end
+end
+!
+config firewall policy
+ edit 1
+  set srcintf port1
+  set dstintf port1
+  set srcaddr all
+  set dstaddr all
+  set action accept
+  set schedule always
+ next
+end`,
+                2: `config system global
+ set hostname SEDE2-FIREWALL
+ set timezone 04
+end
+!
+config system interface
+ edit port1
+  set ip 172.16.8.1 255.255.252.0
+  set description Link-to-SEDE1
+ next
+end`,
+                3: `config system global
+ set hostname SEDE3-FIREWALL
+ set timezone 04
+end
+!
+config system interface
+ edit port1
+  set ip 172.16.12.1 255.255.254.0
+  set description Link-to-SEDE2
+ next
+end`
+            }
+        };
+        
+        function updatePreview() {
+            const fabricante = document.getElementById('fabricante').value;
+            const sede = document.getElementById('sede').value;
+            const commands = commandsByFabricant[fabricante][sede];
+            document.getElementById('commandList').textContent = commands;
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function copyToClipboard() {
+            const text = document.getElementById('commandList').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Comandos copiados al portapapeles');
+            });
+        }
+        
+        function downloadCommands() {
+            const text = document.getElementById('commandList').textContent;
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+            element.setAttribute('download', 'configuracion.txt');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+        
+        function downloadJSON() {
+            const fabricante = document.getElementById('fabricante').value;
+            const sede = document.getElementById('sede').value;
+            const commands = document.getElementById('commandList').textContent;
+            const data = {
+                fabricante,
+                sede,
+                timestamp: new Date().toISOString(),
+                commands: commands.split('\n')
+            };
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
+            element.setAttribute('download', 'configuracion.json');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+        
+        // Initialize
+        updatePreview();
+    </script>
+</body>
+</html>

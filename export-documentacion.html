@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación de Comandos - Red Banda Ancha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            overflow-x: auto;
+        }
+        
+        .tab-button {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .tab-button.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-button:hover {
+            color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .doc-section {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .section-title {
+            color: #00d4ff;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .subsection-title {
+            color: #7fff00;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .command-block {
+            background: #0a0f1e;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #00ff00;
+            overflow-x: auto;
+            line-height: 1.6;
+        }
+        
+        .command-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin: 10px 0;
+            padding-left: 15px;
+            border-left: 3px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        th {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+        
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .note {
+            background: rgba(255, 170, 0, 0.1);
+            border-left: 3px solid #ffaa00;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .warning {
+            background: rgba(255, 68, 68, 0.1);
+            border-left: 3px solid #ff4444;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .success {
+            background: rgba(127, 255, 0, 0.1);
+            border-left: 3px solid #7fff00;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .tabs { flex-wrap: wrap; }
+            .table-container { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Documentación de Comandos</h1>
+            <p class="subtitle">Guía completa de configuración para Cisco, Huawei y Fortinet</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('cisco')">Cisco IOS</button>
+            <button class="tab-button" onclick="switchTab('huawei')">Huawei VRP</button>
+            <button class="tab-button" onclick="switchTab('fortinet')">Fortinet FortiGate</button>
+            <button class="tab-button" onclick="switchTab('comparativa')">Comparativa</button>
+        </div>
+        
+        <!-- Cisco Tab -->
+        <div id="cisco" class="tab-content active">
+            <div class="doc-section">
+                <div class="section-title">Cisco IOS - Configuración Completa</div>
+                
+                <div class="subsection-title">1. Acceso Inicial</div>
+                <div class="command-block">enable
+configure terminal
+hostname ROUTER-SEDE1</div>
+                <div class="command-description">Ingresa al modo privilegiado y accede a la configuración global</div>
+                
+                <div class="subsection-title">2. Configuración de VLANs</div>
+                <div class="command-block">vlan 10
+ name VLAN-Datos
+vlan 20
+ name VLAN-Voz
+vlan 30
+ name VLAN-CCTV
+vlan 40
+ name VLAN-Servidores
+vlan 99
+ name VLAN-Gestion</div>
+                <div class="command-description">Define las VLANs para cada servicio en la red</div>
+                
+                <div class="subsection-title">3. Configuración de Interfaces</div>
+                <div class="command-block">interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.0.1 255.255.248.0
+ no shutdown
+!
+interface Vlan10
+ ip address 172.16.1.1 255.255.255.0
+ description VLAN-Datos</div>
+                <div class="command-description">Configura las interfaces físicas y virtuales (SVI)</div>
+                
+                <div class="subsection-title">4. Enrutamiento OSPF</div>
+                <div class="command-block">router ospf 1
+ network 172.16.0.0 0.0.7.255 area 0
+ network 172.16.8.0 0.0.3.255 area 0
+ default-information originate</div>
+                <div class="command-description">Configura OSPF para enrutamiento dinámico entre sedes</div>
+                
+                <div class="subsection-title">5. Configuración de DHCP</div>
+                <div class="command-block">ip dhcp pool VLAN10
+ network 172.16.1.0 255.255.255.0
+ default-router 172.16.0.1
+ dns-server 8.8.8.8 8.8.4.4
+ lease 7</div>
+                <div class="command-description">Configura DHCP para asignación automática de IPs</div>
+                
+                <div class="subsection-title">6. Configuración de QoS</div>
+                <div class="command-block">class-map match-any VOICE
+ match dscp ef
+!
+policy-map PRIORITY
+ class VOICE
+  priority 100
+!
+interface GigabitEthernet0/0/1
+ service-policy output PRIORITY</div>
+                <div class="command-description">Prioriza tráfico de voz (EF - Expedited Forwarding)</div>
+                
+                <div class="subsection-title">7. Comandos de Verificación</div>
+                <div class="command-block">show running-config
+show ip interface brief
+show ip route
+show vlan
+show ip ospf neighbor
+show ip dhcp binding</div>
+                <div class="command-description">Verifica el estado de la configuración</div>
+                
+                <div class="note">
+                    <strong>💡 Nota:</strong> Siempre ejecuta <code>write memory</code> o <code>copy running-config startup-config</code> para guardar los cambios permanentemente.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Huawei Tab -->
+        <div id="huawei" class="tab-content">
+            <div class="doc-section">
+                <div class="section-title">Huawei VRP - Configuración Completa</div>
+                
+                <div class="subsection-title">1. Acceso Inicial</div>
+                <div class="command-block">system-view
+sysName ROUTER-SEDE1
+undo info-center enable</div>
+                <div class="command-description">Ingresa a la vista del sistema y configura el nombre del dispositivo</div>
+                
+                <div class="subsection-title">2. Configuración de VLANs</div>
+                <div class="command-block">vlan batch 10 20 30 40 99
+!
+vlan 10
+ name VLAN-Datos
+vlan 20
+ name VLAN-Voz</div>
+                <div class="command-description">Crea VLANs en lotes para mayor eficiencia</div>
+                
+                <div class="subsection-title">3. Configuración de Interfaces</div>
+                <div class="command-block">interface GigabitEthernet0/0/1
+ description Link-to-SEDE2
+ ip address 172.16.0.1 255.255.248.0
+!
+interface Vlanif10
+ ip address 172.16.1.1 255.255.255.0
+ description VLAN-Datos</div>
+                <div class="command-description">Configura interfaces físicas y virtuales (Vlanif)</div>
+                
+                <div class="subsection-title">4. Enrutamiento OSPF</div>
+                <div class="command-block">ospf 1
+ area 0.0.0.0
+  network 172.16.0.0 0.0.7.255
+  network 172.16.8.0 0.0.3.255</div>
+                <div class="command-description">Configura OSPF en Huawei VRP</div>
+                
+                <div class="subsection-title">5. Configuración de DHCP</div>
+                <div class="command-block">dhcp enable
+!
+ip pool VLAN10
+ gateway-list 172.16.0.1
+ network 172.16.1.0 mask 255.255.255.0
+ dns-list 8.8.8.8 8.8.4.4
+ lease day 7</div>
+                <div class="command-description">Habilita DHCP y crea pools de direcciones</div>
+                
+                <div class="subsection-title">6. Comandos de Verificación</div>
+                <div class="command-block">display current-configuration
+display interface brief
+display ip routing-table
+display vlan
+display ospf peer</div>
+                <div class="command-description">Verifica la configuración en Huawei</div>
+                
+                <div class="note">
+                    <strong>💡 Nota:</strong> En Huawei, usa <code>quit</code> para salir de la vista del sistema y <code>save</code> para guardar la configuración.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fortinet Tab -->
+        <div id="fortinet" class="tab-content">
+            <div class="doc-section">
+                <div class="section-title">Fortinet FortiGate - Configuración Completa</div>
+                
+                <div class="subsection-title">1. Acceso Inicial</div>
+                <div class="command-block">config system global
+ set hostname FIREWALL-SEDE1
+ set timezone 04
+end</div>
+                <div class="command-description">Configura parámetros globales del firewall</div>
+                
+                <div class="subsection-title">2. Configuración de Interfaces</div>
+                <div class="command-block">config system interface
+ edit port1
+  set ip 172.16.0.1 255.255.248.0
+  set description Link-to-SEDE2
+  set allowaccess ping https ssh
+ next
+ edit port2
+  set ip 172.16.1.1 255.255.255.0
+  set description Internal-Network
+ next
+end</div>
+                <div class="command-description">Configura interfaces de red del firewall</div>
+                
+                <div class="subsection-title">3. Configuración de Enrutamiento</div>
+                <div class="command-block">config router static
+ edit 1
+  set destination 172.16.8.0 255.255.252.0
+  set gateway 172.16.0.2
+  set device port1
+ next
+end</div>
+                <div class="command-description">Define rutas estáticas entre sedes</div>
+                
+                <div class="subsection-title">4. Configuración de Firewall Policy</div>
+                <div class="command-block">config firewall policy
+ edit 1
+  set srcintf port1
+  set dstintf port2
+  set srcaddr all
+  set dstaddr all
+  set action accept
+  set schedule always
+  set service ALL
+ next
+end</div>
+                <div class="command-description">Define políticas de firewall permitidas</div>
+                
+                <div class="subsection-title">5. Configuración de DHCP</div>
+                <div class="command-block">config system dhcp server
+ edit 1
+  set interface port2
+  set lease-time 604800
+  config ip-range
+   edit 1
+    set start-ip 172.16.1.10
+    set end-ip 172.16.1.254
+   next
+  end
+ next
+end</div>
+                <div class="command-description">Configura servidor DHCP en el firewall</div>
+                
+                <div class="subsection-title">6. Comandos de Verificación</div>
+                <div class="command-block">get system status
+get system interface
+get router info routing-table all
+diagnose firewall policy list</div>
+                <div class="command-description">Verifica el estado del firewall</div>
+                
+                <div class="warning">
+                    <strong>⚠️ Advertencia:</strong> Siempre prueba las políticas de firewall antes de aplicarlas en producción. Un error puede bloquear el acceso a la red.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparativa Tab -->
+        <div id="comparativa" class="tab-content">
+            <div class="doc-section">
+                <div class="section-title">Comparativa de Fabricantes</div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Característica</th>
+                                <th>Cisco IOS</th>
+                                <th>Huawei VRP</th>
+                                <th>Fortinet FortiGate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Modo de Configuración</strong></td>
+                                <td>configure terminal</td>
+                                <td>system-view</td>
+                                <td>config [objeto]</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Crear VLAN</strong></td>
+                                <td>vlan 10</td>
+                                <td>vlan 10</td>
+                                <td>config system vlan</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Interfaz Virtual</strong></td>
+                                <td>interface Vlan10</td>
+                                <td>interface Vlanif10</td>
+                                <td>Integrada en interface</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Enrutamiento</strong></td>
+                                <td>router ospf 1</td>
+                                <td>ospf 1</td>
+                                <td>config router static</td>
+                            </tr>
+                            <tr>
+                                <td><strong>DHCP</strong></td>
+                                <td>ip dhcp pool</td>
+                                <td>ip pool</td>
+                                <td>config system dhcp server</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Guardar Config</strong></td>
+                                <td>write memory</td>
+                                <td>save</td>
+                                <td>execute cfg save</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Ver Config</strong></td>
+                                <td>show running-config</td>
+                                <td>display current-configuration</td>
+                                <td>show [objeto]</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="subsection-title">Recomendaciones por Caso de Uso</div>
+                
+                <div class="success">
+                    <strong>✅ Cisco IOS:</strong> Ideal para empresas grandes con infraestructura heterogénea. Excelente soporte, amplia documentación y comunidad activa.
+                </div>
+                
+                <div class="success">
+                    <strong>✅ Huawei VRP:</strong> Buena opción para presupuestos limitados. Rendimiento similar a Cisco con menor costo. Creciente comunidad de soporte.
+                </div>
+                
+                <div class="success">
+                    <strong>✅ Fortinet FortiGate:</strong> Especializado en seguridad y firewall. Mejor para organizaciones que priorizan protección perimetral y control de amenazas.
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Documentación de Comandos © 2026 - Red Banda Ancha</p>
+            <p>Última actualización: <span id="timestamp"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleDateString('es-CO');
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

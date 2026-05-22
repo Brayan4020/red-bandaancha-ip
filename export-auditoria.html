@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Auditoría - Red Banda Ancha</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        header {
+            margin-bottom: 40px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+            padding-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+        }
+        
+        .audit-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .summary-card {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .summary-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .audit-section {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .section-title {
+            color: #00d4ff;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 30px;
+        }
+        
+        .finding {
+            background: rgba(13, 21, 38, 0.5);
+            border-left: 4px solid;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+        
+        .finding.critical {
+            border-left-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+        }
+        
+        .finding.high {
+            border-left-color: #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+        }
+        
+        .finding.medium {
+            border-left-color: #ffff00;
+            background: rgba(255, 255, 0, 0.1);
+        }
+        
+        .finding.low {
+            border-left-color: #7fff00;
+            background: rgba(127, 255, 0, 0.1);
+        }
+        
+        .finding.info {
+            border-left-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .finding-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .finding-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+        }
+        
+        .finding-recommendation {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .severity-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .severity-critical { background: rgba(255, 68, 68, 0.3); color: #ff8888; }
+        .severity-high { background: rgba(255, 170, 0, 0.3); color: #ffcc88; }
+        .severity-medium { background: rgba(255, 255, 0, 0.3); color: #ffff88; }
+        .severity-low { background: rgba(127, 255, 0, 0.3); color: #b3ff66; }
+        .severity-info { background: rgba(0, 212, 255, 0.3); color: #88ddff; }
+        
+        .recommendation-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .recommendation-box h4 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation-box ul {
+            margin-left: 20px;
+        }
+        
+        .recommendation-box li {
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        th {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .audit-summary { grid-template-columns: 1fr; }
+            .chart-container { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Reporte de Auditoría de Configuraciones</h1>
+            <p class="subtitle">Análisis de cumplimiento y mejores prácticas de red</p>
+        </header>
+        
+        <div class="audit-summary">
+            <div class="summary-card">
+                <div class="summary-label">Puntuación General</div>
+                <div class="summary-value">92/100</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Hallazgos Críticos</div>
+                <div class="summary-value">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Hallazgos Altos</div>
+                <div class="summary-value">2</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Configuraciones Auditadas</div>
+                <div class="summary-value">3</div>
+            </div>
+        </div>
+        
+        <div class="audit-section">
+            <div class="section-title">Distribución de Hallazgos por Severidad</div>
+            <div class="chart-container">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="audit-section">
+            <div class="section-title">Hallazgos Detectados</div>
+            
+            <div class="finding critical">
+                <div class="finding-title">
+                    <span class="severity-badge severity-critical">CRÍTICO</span>
+                    Falta de Redundancia en Enlace WAN Primario
+                </div>
+                <div class="finding-description">
+                    El enlace S1 ↔ S2 no tiene un respaldo inmediato. En caso de falla, la Sede 1 perdería conectividad con la Sede 2.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Implementar un segundo enlace físico o configurar un enlace MPLS como respaldo automático.
+                </div>
+            </div>
+            
+            <div class="finding high">
+                <div class="finding-title">
+                    <span class="severity-badge severity-high">ALTO</span>
+                    Configuración de QoS Incompleta
+                </div>
+                <div class="finding-description">
+                    No se han definido políticas de QoS para tráfico de voz en todos los routers. Esto puede causar latencia inaceptable en llamadas VoIP.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Implementar clasificación de tráfico (DSCP EF para voz) y políticas de priorización en todos los enlaces WAN.
+                </div>
+            </div>
+            
+            <div class="finding high">
+                <div class="finding-title">
+                    <span class="severity-badge severity-high">ALTO</span>
+                    Falta de Encriptación en Enlace S1 ↔ S3
+                </div>
+                <div class="finding-description">
+                    El enlace MPLS VPN entre Sede 1 y Sede 3 no tiene encriptación adicional a nivel de aplicación.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Considerar implementar IPSec o TLS para datos sensibles que atraviesen este enlace.
+                </div>
+            </div>
+            
+            <div class="finding medium">
+                <div class="finding-title">
+                    <span class="severity-badge severity-medium">MEDIO</span>
+                    Falta de Logging Centralizado
+                </div>
+                <div class="finding-description">
+                    Los logs de los routers no se envían a un servidor central. Esto dificulta la auditoría y detección de anomalías.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Configurar syslog centralizado y implementar análisis de logs con herramientas como ELK Stack.
+                </div>
+            </div>
+            
+            <div class="finding low">
+                <div class="finding-title">
+                    <span class="severity-badge severity-low">BAJO</span>
+                    Documentación de Red Incompleta
+                </div>
+                <div class="finding-description">
+                    Falta documentación actualizada de la topología, direccionamiento y políticas de seguridad.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Mantener documentación actualizada en un repositorio centralizado (Wiki, Confluence, etc.).
+                </div>
+            </div>
+            
+            <div class="finding info">
+                <div class="finding-title">
+                    <span class="severity-badge severity-info">INFO</span>
+                    Optimización de Ancho de Banda Disponible
+                </div>
+                <div class="finding-description">
+                    La utilización actual de ancho de banda es del 35%. Hay capacidad disponible para crecimiento.
+                </div>
+                <div class="finding-recommendation">
+                    <strong>Recomendación:</strong> Monitorear tendencias de uso y planificar ampliación cuando se alcance el 70% de utilización.
+                </div>
+            </div>
+        </div>
+        
+        <div class="audit-section">
+            <div class="section-title">Cumplimiento de Estándares</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Estándar / Práctica</th>
+                        <th>Estado</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Diseño VLSM</td>
+                        <td style="color: #7fff00;">✅ Cumple</td>
+                        <td>Correctamente implementado con /21, /22, /23</td>
+                    </tr>
+                    <tr>
+                        <td>Enrutamiento Dinámico (OSPF)</td>
+                        <td style="color: #7fff00;">✅ Cumple</td>
+                        <td>Configurado en todas las sedes</td>
+                    </tr>
+                    <tr>
+                        <td>Segmentación por VLAN</td>
+                        <td style="color: #7fff00;">✅ Cumple</td>
+                        <td>VLANs separadas por servicio (Datos, Voz, CCTV)</td>
+                    </tr>
+                    <tr>
+                        <td>Redundancia de Enlace</td>
+                        <td style="color: #ffaa00;">⚠️ Parcial</td>
+                        <td>Solo S1-S3 tiene respaldo; S1-S2 y S2-S3 sin redundancia</td>
+                    </tr>
+                    <tr>
+                        <td>QoS Implementado</td>
+                        <td style="color: #ffaa00;">⚠️ Parcial</td>
+                        <td>Configurado en Sede 1, falta en Sedes 2 y 3</td>
+                    </tr>
+                    <tr>
+                        <td>Monitoreo y Alertas</td>
+                        <td style="color: #ff8888;">❌ No Cumple</td>
+                        <td>Requiere implementación de herramientas de monitoreo</td>
+                    </tr>
+                    <tr>
+                        <td>Backup de Configuración</td>
+                        <td style="color: #ff8888;">❌ No Cumple</td>
+                        <td>Establecer política de backup automático</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="audit-section">
+            <div class="section-title">Plan de Acción Recomendado</div>
+            
+            <div class="recommendation-box">
+                <h4>Fase 1: Crítico (Próximas 2 semanas)</h4>
+                <ul>
+                    <li>Implementar redundancia en enlace S1 ↔ S2</li>
+                    <li>Configurar failover automático entre enlaces primario y respaldo</li>
+                    <li>Realizar pruebas de conmutación sin afectar servicios</li>
+                </ul>
+            </div>
+            
+            <div class="recommendation-box">
+                <h4>Fase 2: Alto (Próximas 4 semanas)</h4>
+                <ul>
+                    <li>Completar configuración de QoS en todas las sedes</li>
+                    <li>Implementar encriptación IPSec en enlace S1 ↔ S3</li>
+                    <li>Establecer monitoreo de latencia y pérdida de paquetes</li>
+                </ul>
+            </div>
+            
+            <div class="recommendation-box">
+                <h4>Fase 3: Mejora Continua (Próximos 2 meses)</h4>
+                <ul>
+                    <li>Implementar logging centralizado con syslog</li>
+                    <li>Establecer política de backup automático de configuraciones</li>
+                    <li>Crear documentación completa de la infraestructura</li>
+                    <li>Implementar herramientas de monitoreo (Zabbix, Nagios, etc.)</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="audit-section">
+            <div class="section-title">Métricas de Rendimiento</div>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Reporte de Auditoría © 2026 - Red Banda Ancha</p>
+            <p>Generado: <span id="timestamp"></span></p>
+            <p>Próxima auditoría recomendada: 30 días</p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('es-CO');
+        
+        // Severity Chart
+        const severityCtx = document.getElementById('severityChart').getContext('2d');
+        new Chart(severityCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Crítico', 'Alto', 'Medio', 'Bajo', 'Info'],
+                datasets: [{
+                    data: [0, 2, 1, 1, 1],
+                    backgroundColor: ['#ff4444', '#ffaa00', '#ffff00', '#7fff00', '#00d4ff'],
+                    borderColor: '#0a0f1e',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: { color: '#e0e0e0', font: { size: 12 } }
+                    }
+                }
+            }
+        });
+        
+        // Performance Chart
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(perfCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Disponibilidad', 'Latencia', 'Throughput', 'Seguridad', 'Redundancia', 'Documentación'],
+                datasets: [{
+                    label: 'Cumplimiento (%)',
+                    data: [95, 88, 92, 75, 60, 50],
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00d4ff',
+                    pointBorderColor: '#0a0f1e',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#e0e0e0', font: { size: 12 } }
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#e0e0e0' },
+                        grid: { color: 'rgba(0, 212, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
