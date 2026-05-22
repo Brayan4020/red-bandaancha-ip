@@ -284,6 +284,18 @@ export function generateCiscoConfig(
   const sections: ConfigSection[] = [];
   const allCommands: string[] = [];
 
+  // Initial Access Commands
+  const initialCommands = [
+    `enable`,
+    `configure terminal`,
+  ];
+  sections.push({
+    name: "Initial Access",
+    description: "Enter privileged mode and configuration mode",
+    commands: initialCommands,
+  });
+  allCommands.push(...initialCommands);
+
   // System Configuration
   const systemCommands = [
     `hostname SW-${input.siteId.toUpperCase()}-${site.name.split(" ")[0]}`,
@@ -460,6 +472,18 @@ export function generateCiscoConfig(
     commands: monitoringCommands,
   });
   allCommands.push(...monitoringCommands);
+
+  // Save Configuration
+  const saveCommands = [
+    `end`,
+    `write memory`,
+  ];
+  sections.push({
+    name: "Save Configuration",
+    description: "Exit configuration mode and save running config to startup config",
+    commands: saveCommands,
+  });
+  allCommands.push(...saveCommands);
 
   return {
     vendor: "Cisco IOS",

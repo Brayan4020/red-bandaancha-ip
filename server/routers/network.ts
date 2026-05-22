@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getAllNetworkDevices, getNetworkDeviceById, createNetworkDevice, updateDeviceStatus, getLatestDeviceConfig, saveDeviceConfig, createAutomationTask, getAutomationTask, updateAutomationTaskStatus, createAiRecommendation, getNewRecommendations } from "../db";
 import { testDeviceConnectivity, NetworkDeviceConnector } from "../network/device-connector";
@@ -6,6 +7,7 @@ import { generateConfiguration } from "../network/config-generator";
 import { quickAudit } from "../network/config-auditor";
 import { validateCommands } from "../network/syntax-validator";
 import { exportConfiguration, generateSiteTemplate } from "../network/config-exporter";
+import { saveConfigToHistory, getUserConfigHistory, getConfigById, updateConfigMetadata, deleteConfig, getTemplates, searchConfigs, getConfigStats } from "../db-config-history";
 
 export const networkRouter = router({
   // ─── Device Management ─────────────────────────────────────────────────
@@ -395,4 +397,192 @@ export const networkRouter = router({
         return { success: false, error: String(error) };
       }
     }),
+
+  // ─── Configuration History ─────────────────────────────────────────────────
+
+  /**
+   * Save generated configuration to history
+   */
+  saveConfigToHistory: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]),
+        deviceType: z.enum(["switch", "router", "firewall"]),
+        siteId: z.enum(["sede1", "sede2", "sede3"]),
+        configName: z.string().min(3),
+        configContent: z.string(),
+        commandCount: z.number(),
+        auditScore: z.number().optional(),
+        auditNotes: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        notes: z.string().optional(),
+        isTemplate: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const saved = await saveConfigToHistory(ctx.user.id, {
+          userId: ctx.user.id,
+          ...input,
+        });
+        return { success: true, config: saved };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Get configuration history for current user
+   */
+  getConfigHistory: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]).optional(),
+        siteId: z.enum(["sede1", "sede2", "sede3"]).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const history = await getUserConfigHistory(ctx.user.id, {
+          vendor: input.vendor,
+          siteId: input.siteId,
+        });
+        return { success: true, history };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Get a specific configuration by ID
+   */
+  getConfigById: protectedProcedure
+    .input(z.object({ configId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const config = await getConfigById(input.configId, ctx.user.id);
+        if (!config) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Configuration not found",
+          });
+        }
+        return { success: true, config };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Update configuration metadata
+   */
+  updateConfigMetadata: protectedProcedure
+    .input(
+      z.object({
+        configId: z.number(),
+        configName: z.string().optional(),
+        auditScore: z.number().optional(),
+        auditNotes: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        notes: z.string().optional(),
+        isTemplate: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { configId, ...updates } = input;
+        const updated = await updateConfigMetadata(configId, ctx.user.id, updates);
+        return { success: true, config: updated };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Delete configuration from history
+   */
+  deleteConfig: protectedProcedure
+    .input(z.object({ configId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const deleted = await deleteConfig(input.configId, ctx.user.id);
+        if (!deleted) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Configuration not found",
+          });
+        }
+        return { success: true };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Get saved templates
+   */
+  getTemplates: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const templates = await getTemplates(ctx.user.id, input.vendor);
+        return { success: true, templates };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Search configurations
+   */
+  searchConfigs: protectedProcedure
+    .input(z.object({ searchTerm: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const results = await searchConfigs(ctx.user.id, input.searchTerm);
+        return { success: true, results };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Get configuration statistics
+   */
+  getConfigStats: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const stats = await getConfigStats(ctx.user.id);
+      return { success: true, stats };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: String(error),
+      });
+    }
+  }),
 });

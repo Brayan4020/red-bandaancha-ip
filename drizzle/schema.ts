@@ -144,3 +144,29 @@ export const networkEvents = mysqlTable("network_events", {
 
 export type NetworkEvent = typeof networkEvents.$inferSelect;
 export type InsertNetworkEvent = typeof networkEvents.$inferInsert;
+
+/**
+ * Configuration generation history
+ * Stores generated configurations for audit trail and comparison
+ */
+export const configHistory = mysqlTable("config_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  vendor: mysqlEnum("vendor", ["huawei", "cisco", "fortinet"]).notNull(),
+  deviceType: mysqlEnum("deviceType", ["switch", "router", "firewall"]).notNull(),
+  siteId: mysqlEnum("siteId", ["sede1", "sede2", "sede3"]).notNull(),
+  configName: varchar("configName", { length: 256 }).notNull(),
+  configContent: text("configContent").notNull(), // JSON stringified config
+  commandCount: int("commandCount").notNull(),
+  auditScore: int("auditScore").default(0), // 0-100
+  auditNotes: text("auditNotes"), // Audit results
+  exportFormat: mysqlEnum("exportFormat", ["txt", "md", "json", "csv"]).default("txt"),
+  tags: json("tags"), // Array of tags for filtering
+  notes: text("notes"), // User notes
+  isTemplate: boolean("isTemplate").default(false), // Whether saved as template
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ConfigHistory = typeof configHistory.$inferSelect;
+export type InsertConfigHistory = typeof configHistory.$inferInsert;
