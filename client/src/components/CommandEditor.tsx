@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Copy, Check, AlertCircle } from "lucide-react";
 
 export interface CommandEditorProps {
-  commands: string[];
-  sections: Array<{
+  commands?: string[];
+  sections?: Array<{
     name: string;
     description: string;
     commands: string[];
@@ -20,14 +20,14 @@ export interface CommandEditorProps {
 }
 
 export function CommandEditor({
-  commands,
-  sections,
+  commands = [],
+  sections = [],
   vendor,
   onCommandsChange,
   readOnly = false,
 }: CommandEditorProps) {
   const [editMode, setEditMode] = useState(false);
-  const [editedCommands, setEditedCommands] = useState(commands.join("\n"));
+  const [editedCommands, setEditedCommands] = useState((commands || []).join("\n"));
   const [selectedSection, setSelectedSection] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<{ line: number; message: string }[]>([]);
