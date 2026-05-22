@@ -1,18 +1,29 @@
 /**
  * Configuration Generator & Auditor Component
- * Generates and audits network device configurations
+ * Generates, validates, audits and exports network device configurations
  */
 
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Copy, Check, AlertCircle, CheckCircle, AlertTriangle } from "lucide-react";
+import {
+  Loader2,
+  Copy,
+  Check,
+  AlertCircle,
+  CheckCircle,
+  AlertTriangle,
+  Download,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { Streamdown } from "streamdown";
 
 type Site = "sede1" | "sede2" | "sede3";
 type Vendor = "huawei" | "cisco" | "fortinet";
 type DeviceType = "switch" | "router" | "firewall";
+type ExportFormat = "txt" | "md" | "json" | "csv";
 
 interface ConfigState {
   siteId: Site;
@@ -28,6 +39,14 @@ interface AuditIssue {
   affectedCommands: string[];
 }
 
+interface ValidationError {
+  line: number;
+  command: string;
+  severity: "critical" | "warning" | "info";
+  issue: string;
+  suggestion: string;
+}
+
 export function ConfigGenerator() {
   const [config, setConfig] = useState<ConfigState>({
     siteId: "sede1",
@@ -37,6 +56,8 @@ export function ConfigGenerator() {
 
   const [copied, setCopied] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("txt");
+  const [showValidation, setShowValidation] = useState(false);
 
   // Queries
   const generateQuery = trpc.network.generateConfig.useQuery(config, {
@@ -55,6 +76,45 @@ export function ConfigGenerator() {
     }
   );
 
+  const validateQuery = trpc.network.validateSyntax.useQuery(
+    {
+      vendor: config.vendor,
+      commands: generateQuery.data?.config?.commands || [],
+    },
+    {
+      enabled: !!generateQuery.data?.config && showValidation,
+    }
+  );
+
+  const exportQuery = trpc.network.exportConfig.useQuery(
+    {
+      config: generateQuery.data?.config || {
+        vendor: "",
+        deviceType: "",
+        site: "",
+        commands: [],
+        sections: [],
+        timestamp: 0,
+      },
+      format: exportFormat,
+      includeComments: true,
+      includeSectionHeaders: true,
+    },
+    {
+      enabled: !!generateQuery.data?.config,
+    }
+  );
+
+  const siteTemplateQuery = trpc.network.getSiteTemplate.useQuery(
+    {
+      vendor: config.vendor,
+      site: config.siteId,
+    },
+    {
+      enabled: true,
+    }
+  );
+
   const handleGenerate = async () => {
     await generateQuery.refetch();
   };
@@ -68,14 +128,27 @@ export function ConfigGenerator() {
     }
   };
 
-  const getSeverityColor = (
-    severity: "critical" | "high" | "medium" | "low" | "info"
-  ) => {
+  const handleDownload = () => {
+    if (exportQuery.data?.export) {
+      const element = document.createElement("a");
+      const file = new Blob([exportQuery.data.export.content], {
+        type: exportQuery.data.export.mimeType,
+      });
+      element.href = URL.createObjectURL(file);
+      element.download = exportQuery.data.export.filename;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    }
+  };
+
+  const getSeverityColor = (severity: "critical" | "high" | "medium" | "low" | "info" | "warning") => {
     switch (severity) {
       case "critical":
         return "bg-red-100 text-red-800 border-red-300";
       case "high":
         return "bg-orange-100 text-orange-800 border-orange-300";
+      case "warning":
       case "medium":
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
       case "low":
@@ -92,6 +165,7 @@ export function ConfigGenerator() {
       case "critical":
       case "high":
         return <AlertTriangle className="w-4 h-4" />;
+      case "warning":
       case "medium":
       case "low":
         return <AlertCircle className="w-4 h-4" />;
@@ -102,20 +176,64 @@ export function ConfigGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Configuration Selection */}
-      <Card className="p-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Generador de Configuraciones</h1>
+        <p className="text-gray-600">
+          Genera y audita configuraciones de red para Huawei, Cisco y Fortinet
+        </p>
+      </div>
+
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
+              <span className="text-sm font-bold">⚙️</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Generación</h3>
+              <p className="text-xs text-gray-600">Comandos completos y auditados para 3 fabricantes</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
+              <span className="text-sm font-bold">✓</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Validación</h3>
+              <p className="text-xs text-gray-600">Validación VLSM y mejores prácticas</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 bg-purple-50 border-purple-200">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-200 flex items-center justify-center">
+              <span className="text-sm font-bold">{siteTemplateQuery.data?.template?.vlsmInfo?.hosts}</span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm">Plantillas por Sede</h3>
+              <p className="text-xs text-gray-600">Configuraciones específicas VLSM</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Configuration Form */}
+      <Card className="p-6 bg-black text-white">
         <h2 className="text-lg font-semibold mb-4">Generar Configuración</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          {/* Site Selection */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
             <label className="block text-sm font-medium mb-2">Sede</label>
             <select
               value={config.siteId}
-              onChange={(e) =>
-                setConfig({ ...config, siteId: e.target.value as Site })
-              }
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => setConfig({ ...config, siteId: e.target.value as Site })}
+              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
             >
               <option value="sede1">Sede 1 - Teusaquillo</option>
               <option value="sede2">Sede 2 - Campus U</option>
@@ -123,15 +241,12 @@ export function ConfigGenerator() {
             </select>
           </div>
 
-          {/* Vendor Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">Fabricante</label>
             <select
               value={config.vendor}
-              onChange={(e) =>
-                setConfig({ ...config, vendor: e.target.value as Vendor })
-              }
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => setConfig({ ...config, vendor: e.target.value as Vendor })}
+              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
             >
               <option value="huawei">Huawei VRP</option>
               <option value="cisco">Cisco IOS</option>
@@ -139,15 +254,12 @@ export function ConfigGenerator() {
             </select>
           </div>
 
-          {/* Device Type Selection */}
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de Dispositivo</label>
             <select
               value={config.deviceType}
-              onChange={(e) =>
-                setConfig({ ...config, deviceType: e.target.value as DeviceType })
-              }
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => setConfig({ ...config, deviceType: e.target.value as DeviceType })}
+              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
             >
               <option value="switch">Switch</option>
               <option value="router">Router</option>
@@ -159,7 +271,7 @@ export function ConfigGenerator() {
         <Button
           onClick={handleGenerate}
           disabled={generateQuery.isLoading}
-          className="w-full"
+          className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
         >
           {generateQuery.isLoading ? (
             <>
@@ -172,39 +284,124 @@ export function ConfigGenerator() {
         </Button>
       </Card>
 
+      {/* Site Template Info */}
+      {siteTemplateQuery.data?.template && (
+        <Card className="p-4 bg-purple-50 border-purple-200">
+          <h3 className="font-semibold mb-2">Información de Plantilla</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <p className="text-gray-600">Red</p>
+              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.network}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Máscara</p>
+              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.mask}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Gateway</p>
+              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.gateway}</p>
+            </div>
+            <div>
+              <p className="text-gray-600">Hosts</p>
+              <p className="font-semibold">{siteTemplateQuery.data.template.vlsmInfo.hosts}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Generated Configuration */}
       {generateQuery.data?.config && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Configuración Generada</h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyCommands}
-              className="gap-2"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copiar Comandos
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleCopyCommands}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? "Copiado" : "Copiar"}
+              </Button>
+
+              <Button
+                onClick={() => setShowValidation(!showValidation)}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                {showValidation ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showValidation ? "Ocultar" : "Validar"}
+              </Button>
+
+              <div className="flex gap-2">
+                <select
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+                  className="px-2 py-1 text-sm border rounded"
+                >
+                  <option value="txt">TXT</option>
+                  <option value="md">Markdown</option>
+                  <option value="json">JSON</option>
+                  <option value="csv">CSV</option>
+                </select>
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
+          {/* Validation Results */}
+          {showValidation && validateQuery.data?.validation && (
+            <div className="mb-4 space-y-2">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm font-semibold text-blue-900">
+                  {validateQuery.data.validation.isValid ? "✓ Validación exitosa" : "✗ Errores encontrados"}
+                </p>
+                <p className="text-xs text-blue-700">{validateQuery.data.validation.summary}</p>
+              </div>
+
+              {validateQuery.data.validation.errors.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-red-900">Errores Críticos:</h4>
+                  {validateQuery.data.validation.errors.map((error: ValidationError, idx: number) => (
+                    <div key={idx} className="p-2 bg-red-50 border border-red-200 rounded text-xs">
+                      <p className="font-semibold text-red-900">Línea {error.line}: {error.issue}</p>
+                      <p className="text-red-700">Sugerencia: {error.suggestion}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {validateQuery.data.validation.warnings.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-yellow-900">Advertencias:</h4>
+                  {validateQuery.data.validation.warnings.map((warning: ValidationError, idx: number) => (
+                    <div key={idx} className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                      <p className="font-semibold text-yellow-900">Línea {warning.line}: {warning.issue}</p>
+                      <p className="text-yellow-700">Sugerencia: {warning.suggestion}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sections */}
+          <div className="space-y-2">
             {generateQuery.data.config.sections?.map((section, idx) => (
               <div key={idx} className="border rounded-lg">
                 <button
                   onClick={() =>
-                    setExpandedSection(
-                      expandedSection === section.name ? null : section.name
-                    )
+                    setExpandedSection(expandedSection === section.name ? null : section.name)
                   }
                   className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
                 >
@@ -212,9 +409,7 @@ export function ConfigGenerator() {
                     <h3 className="font-semibold">{section.name}</h3>
                     <p className="text-sm text-gray-600">{section.description}</p>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {section.commands.length} comandos
-                  </span>
+                  <span className="text-sm text-gray-500">{section.commands.length} comandos</span>
                 </button>
 
                 {expandedSection === section.name && (
@@ -271,9 +466,7 @@ export function ConfigGenerator() {
               )}
               <div>
                 <h3 className="font-semibold">Cumplimiento VLSM</h3>
-                <p className="text-sm text-gray-700">
-                  {auditQuery.data.audit.vlsmCompliance.details}
-                </p>
+                <p className="text-sm text-gray-700">{auditQuery.data.audit.vlsmCompliance.details}</p>
               </div>
             </div>
           </div>

@@ -4,6 +4,8 @@ import { getAllNetworkDevices, getNetworkDeviceById, createNetworkDevice, update
 import { testDeviceConnectivity, NetworkDeviceConnector } from "../network/device-connector";
 import { generateConfiguration } from "../network/config-generator";
 import { quickAudit } from "../network/config-auditor";
+import { validateCommands } from "../network/syntax-validator";
+import { exportConfiguration, generateSiteTemplate } from "../network/config-exporter";
 
 export const networkRouter = router({
   // ─── Device Management ─────────────────────────────────────────────────
@@ -313,6 +315,82 @@ export const networkRouter = router({
       try {
         const auditResult = quickAudit(input);
         return { success: true, audit: auditResult };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  /**
+   * Validate command syntax
+   */
+  validateSyntax: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]),
+        commands: z.array(z.string()),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const validation = validateCommands(input.vendor, input.commands);
+        return { success: true, validation };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  /**
+   * Export configuration in various formats
+   */
+  exportConfig: protectedProcedure
+    .input(
+      z.object({
+        config: z.object({
+          vendor: z.string(),
+          deviceType: z.string(),
+          site: z.string(),
+          commands: z.array(z.string()),
+          sections: z.array(
+            z.object({
+              name: z.string(),
+              description: z.string(),
+              commands: z.array(z.string()),
+            })
+          ),
+          timestamp: z.number(),
+        }),
+        format: z.enum(["txt", "md", "json", "csv"]),
+        includeComments: z.boolean().default(true),
+        includeSectionHeaders: z.boolean().default(true),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const result = exportConfiguration(input.config, {
+          format: input.format,
+          includeComments: input.includeComments,
+          includeSectionHeaders: input.includeSectionHeaders,
+        });
+        return { success: true, export: result };
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    }),
+
+  /**
+   * Get site template with VLSM information
+   */
+  getSiteTemplate: publicProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]),
+        site: z.enum(["sede1", "sede2", "sede3"]),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const template = generateSiteTemplate(input.vendor, input.site);
+        return { success: true, template };
       } catch (error) {
         return { success: false, error: String(error) };
       }
