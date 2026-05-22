@@ -8,6 +8,7 @@ import { quickAudit } from "../network/config-auditor";
 import { validateCommands } from "../network/syntax-validator";
 import { exportConfiguration, generateSiteTemplate } from "../network/config-exporter";
 import { saveConfigToHistory, getUserConfigHistory, getConfigById, updateConfigMetadata, deleteConfig, getTemplates, searchConfigs, getConfigStats } from "../db-config-history";
+import { applyConfigurationViaSSH, validateSSHConnection } from "../network/ssh-executor";
 
 export const networkRouter = router({
   // ─── Device Management ─────────────────────────────────────────────────
@@ -585,4 +586,82 @@ export const networkRouter = router({
       });
     }
   }),
+
+  // --- SSH Configuration Application ---
+
+  /**
+   * Validate SSH connection to a device
+   */
+  validateSSHConnection: protectedProcedure
+    .input(
+      z.object({
+        deviceIp: z.string(),
+        devicePort: z.number().min(1).max(65535).optional(),
+        deviceUsername: z.string().min(1),
+        devicePassword: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const isValid = await validateSSHConnection({
+          host: input.deviceIp,
+          port: input.devicePort || 22,
+          username: input.deviceUsername,
+          password: input.devicePassword,
+          timeout: 10000,
+        });
+        return { success: isValid };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
+
+  /**
+   * Apply configuration to a device via SSH
+   */
+  applyConfiguration: protectedProcedure
+    .input(
+      z.object({
+        vendor: z.enum(["huawei", "cisco", "fortinet"]),
+        commands: z.array(z.string()),
+        deviceIp: z.string(),
+        devicePort: z.number().min(1).max(65535).optional(),
+        deviceUsername: z.string().min(1),
+        devicePassword: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        if (input.commands.length === 0) {
+          throw new Error("No commands to execute");
+        }
+
+        const result = await applyConfigurationViaSSH({
+          host: input.deviceIp,
+          port: input.devicePort || 22,
+          username: input.deviceUsername,
+          password: input.devicePassword,
+          commands: input.commands,
+          vendor: input.vendor,
+          timeout: 30000,
+        });
+
+        return {
+          success: result.success,
+          executedCommands: result.executedCommands,
+          failedCommands: result.failedCommands,
+          output: result.output,
+          errors: result.errors,
+          duration: result.duration,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: String(error),
+        });
+      }
+    }),
 });

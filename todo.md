@@ -36,3 +36,14 @@
 - [x] Agregar validación de sintaxis en CommandEditor
 - [x] Compilación exitosa sin errores
 - [x] Todos los tests pasan (61 tests)
+
+
+## Integración CommandEditor y SSH (Nueva Fase)
+
+- [x] Integrar CommandEditor en ConfigGenerator con tabs
+- [x] Crear aplicador SSH (ssh-executor.ts) para ejecutar comandos en dispositivos
+- [x] Agregar procedimientos tRPC para SSH (validateSSHConnection, applyConfiguration)
+- [x] Agregar UI en ConfigGenerator para conectar y aplicar configuraciones
+- [x] Instalar dependencia ssh2 y @types/ssh2
+- [x] Compilación exitosa sin errores
+- [x] Todos los tests pasan (61 tests)

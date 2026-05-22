@@ -7,6 +7,8 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import {
   Loader2,
   Copy,
@@ -15,10 +17,11 @@ import {
   CheckCircle,
   AlertTriangle,
   Download,
-  Eye,
-  EyeOff,
+  Play,
+  Zap,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
+import { CommandEditor } from "./CommandEditor";
 
 type Site = "sede1" | "sede2" | "sede3";
 type Vendor = "huawei" | "cisco" | "fortinet";
@@ -55,9 +58,16 @@ export function ConfigGenerator() {
   });
 
   const [copied, setCopied] = useState(false);
-  const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("txt");
   const [showValidation, setShowValidation] = useState(false);
+  const [editedCommands, setEditedCommands] = useState<string[]>([]);
+  const [configName, setConfigName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyStatus, setApplyStatus] = useState<"idle" | "connecting" | "applying" | "success" | "error">("idle");
+  const [deviceIp, setDeviceIp] = useState("");
+  const [deviceUsername, setDeviceUsername] = useState("");
+  const [devicePassword, setDevicePassword] = useState("");
 
   // Queries
   const generateQuery = trpc.network.generateConfig.useQuery(config, {
@@ -67,7 +77,7 @@ export function ConfigGenerator() {
   const auditQuery = trpc.network.auditConfig.useQuery(
     {
       vendor: generateQuery.data?.config?.vendor || "",
-      commands: generateQuery.data?.config?.commands || [],
+      commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
       sections: generateQuery.data?.config?.sections || [],
       site: config.siteId,
     },
@@ -79,7 +89,7 @@ export function ConfigGenerator() {
   const validateQuery = trpc.network.validateSyntax.useQuery(
     {
       vendor: config.vendor,
-      commands: generateQuery.data?.config?.commands || [],
+      commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
     },
     {
       enabled: !!generateQuery.data?.config && showValidation,
@@ -88,7 +98,10 @@ export function ConfigGenerator() {
 
   const exportQuery = trpc.network.exportConfig.useQuery(
     {
-      config: generateQuery.data?.config || {
+      config: {
+        ...generateQuery.data?.config,
+        commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
+      } || {
         vendor: "",
         deviceType: "",
         site: "",
@@ -115,13 +128,18 @@ export function ConfigGenerator() {
     }
   );
 
+  const saveHistoryMutation = trpc.network.saveConfigToHistory.useMutation();
+  const applyConfigMutation = trpc.network.applyConfiguration.useMutation();
+
   const handleGenerate = async () => {
     await generateQuery.refetch();
+    setEditedCommands([]);
   };
 
   const handleCopyCommands = () => {
-    if (generateQuery.data?.config?.commands) {
-      const text = generateQuery.data.config.commands.join("\n");
+    const commands = editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []);
+    if (commands.length > 0) {
+      const text = commands.join("\n");
       navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -139,6 +157,62 @@ export function ConfigGenerator() {
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+    }
+  };
+
+  const handleSaveToHistory = async () => {
+    if (!generateQuery.data?.config) return;
+
+    setIsSaving(true);
+    try {
+      await saveHistoryMutation.mutateAsync({
+        vendor: config.vendor as any,
+        deviceType: config.deviceType as any,
+        siteId: config.siteId as any,
+        configName: configName || `${config.vendor}-${config.siteId}-${new Date().toLocaleDateString()}`,
+        configContent: JSON.stringify({
+          ...generateQuery.data.config,
+          commands: editedCommands.length > 0 ? editedCommands : generateQuery.data.config.commands,
+        }),
+        commandCount: editedCommands.length > 0 ? editedCommands.length : generateQuery.data.config.commands.length,
+        auditScore: auditQuery.data?.audit?.score || 0,
+        auditNotes: auditQuery.data?.audit?.summary || "",
+        tags: [config.vendor, config.siteId, config.deviceType],
+      });
+      setConfigName("");
+    } catch (error) {
+      console.error("Error saving configuration:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleApplyConfiguration = async () => {
+    if (!generateQuery.data?.config || !deviceIp || !deviceUsername || !devicePassword) {
+      alert("Por favor completa todos los campos");
+      return;
+    }
+
+    setIsApplying(true);
+    setApplyStatus("connecting");
+
+    try {
+      await applyConfigMutation.mutateAsync({
+        vendor: config.vendor as any,
+        commands: editedCommands.length > 0 ? editedCommands : generateQuery.data.config.commands,
+        deviceIp,
+        deviceUsername,
+        devicePassword,
+        devicePort: 22,
+      });
+      setApplyStatus("success");
+      setTimeout(() => setApplyStatus("idle"), 3000);
+    } catch (error) {
+      console.error("Error applying configuration:", error);
+      setApplyStatus("error");
+      setTimeout(() => setApplyStatus("idle"), 3000);
+    } finally {
+      setIsApplying(false);
     }
   };
 
@@ -174,13 +248,15 @@ export function ConfigGenerator() {
     }
   };
 
+  const currentCommands = editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Generador de Configuraciones</h1>
         <p className="text-gray-600">
-          Genera y audita configuraciones de red para Huawei, Cisco y Fortinet
+          Genera, edita, audita y aplica configuraciones de red para Huawei, Cisco y Fortinet
         </p>
       </div>
 
@@ -193,7 +269,7 @@ export function ConfigGenerator() {
             </div>
             <div>
               <h3 className="font-semibold text-sm">Generación</h3>
-              <p className="text-xs text-gray-600">Comandos completos y auditados para 3 fabricantes</p>
+              <p className="text-xs text-gray-600">Comandos completos para 3 fabricantes</p>
             </div>
           </div>
         </Card>
@@ -204,8 +280,8 @@ export function ConfigGenerator() {
               <span className="text-sm font-bold">✓</span>
             </div>
             <div>
-              <h3 className="font-semibold text-sm">Validación</h3>
-              <p className="text-xs text-gray-600">Validación VLSM y mejores prácticas</p>
+              <h3 className="font-semibold text-sm">Edición Visual</h3>
+              <p className="text-xs text-gray-600">Edita y valida comandos antes de aplicar</p>
             </div>
           </div>
         </Card>
@@ -213,11 +289,11 @@ export function ConfigGenerator() {
         <Card className="p-4 bg-purple-50 border-purple-200">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-lg bg-purple-200 flex items-center justify-center">
-              <span className="text-sm font-bold">{siteTemplateQuery.data?.template?.vlsmInfo?.hosts}</span>
+              <span className="text-sm font-bold">🚀</span>
             </div>
             <div>
-              <h3 className="font-semibold text-sm">Plantillas por Sede</h3>
-              <p className="text-xs text-gray-600">Configuraciones específicas VLSM</p>
+              <h3 className="font-semibold text-sm">Aplicación SSH</h3>
+              <p className="text-xs text-gray-600">Aplica directamente en dispositivos</p>
             </div>
           </div>
         </Card>
@@ -268,11 +344,7 @@ export function ConfigGenerator() {
           </div>
         </div>
 
-        <Button
-          onClick={handleGenerate}
-          disabled={generateQuery.isLoading}
-          className="w-full bg-cyan-500 hover:bg-cyan-600 text-black font-semibold"
-        >
+        <Button onClick={handleGenerate} disabled={generateQuery.isLoading} className="w-full">
           {generateQuery.isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -284,283 +356,205 @@ export function ConfigGenerator() {
         </Button>
       </Card>
 
-      {/* Site Template Info */}
-      {siteTemplateQuery.data?.template && (
-        <Card className="p-4 bg-purple-50 border-purple-200">
-          <h3 className="font-semibold mb-2">Información de Plantilla</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-gray-600">Red</p>
-              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.network}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Máscara</p>
-              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.mask}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Gateway</p>
-              <p className="font-mono font-semibold">{siteTemplateQuery.data.template.vlsmInfo.gateway}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">Hosts</p>
-              <p className="font-semibold">{siteTemplateQuery.data.template.vlsmInfo.hosts}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Generated Configuration */}
+      {/* Results Tabs */}
       {generateQuery.data?.config && (
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Configuración Generada</h2>
+        <Tabs defaultValue="editor" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="editor">Editor Visual</TabsTrigger>
+            <TabsTrigger value="audit">Auditoría</TabsTrigger>
+            <TabsTrigger value="export">Exportar</TabsTrigger>
+            <TabsTrigger value="apply">Aplicar SSH</TabsTrigger>
+          </TabsList>
+
+          {/* Editor Tab */}
+          <TabsContent value="editor" className="space-y-4">
+            <Card className="p-6">
+              <CommandEditor
+                commands={currentCommands}
+                sections={generateQuery.data.config.sections}
+                vendor={config.vendor}
+                onCommandsChange={setEditedCommands}
+              />
+            </Card>
+
             <div className="flex gap-2">
-              <Button
-                onClick={handleCopyCommands}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? "Copiado" : "Copiar"}
+              <Button onClick={handleCopyCommands} variant="outline" className="flex-1">
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar Todo
+                  </>
+                )}
               </Button>
-
-              <Button
-                onClick={() => setShowValidation(!showValidation)}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                {showValidation ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {showValidation ? "Ocultar" : "Validar"}
+              <Button onClick={handleSaveToHistory} disabled={isSaving} className="flex-1">
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  "Guardar en Historial"
+                )}
               </Button>
+            </div>
 
-              <div className="flex gap-2">
+            <div>
+              <label className="block text-sm font-medium mb-2">Nombre de la Configuración</label>
+              <Input
+                value={configName}
+                onChange={(e) => setConfigName(e.target.value)}
+                placeholder="Ej: Config-Sede1-2026-05-22"
+              />
+            </div>
+          </TabsContent>
+
+          {/* Audit Tab */}
+          <TabsContent value="audit" className="space-y-4">
+            {auditQuery.isLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : auditQuery.data?.audit ? (
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Resultados de Auditoría</h3>
+                  <div className="text-3xl font-bold text-blue-600">{auditQuery.data.audit.score}/100</div>
+                </div>
+
+                <p className="text-gray-600">{auditQuery.data.audit.summary}</p>
+
+                {auditQuery.data.audit.issues && auditQuery.data.audit.issues.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold">Problemas Encontrados:</h4>
+                    {auditQuery.data.audit.issues.map((issue: AuditIssue, idx: number) => (
+                      <div key={idx} className={`p-3 rounded border ${getSeverityColor(issue.severity)}`}>
+                        <div className="flex items-start gap-2">
+                          {getSeverityIcon(issue.severity)}
+                          <div className="flex-1">
+                            <p className="font-semibold text-sm">{issue.category}: {issue.issue}</p>
+                            <p className="text-xs mt-1">{issue.recommendation}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            ) : null}
+          </TabsContent>
+
+          {/* Export Tab */}
+          <TabsContent value="export" className="space-y-4">
+            <Card className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Formato de Exportación</label>
                 <select
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
-                  className="px-2 py-1 text-sm border rounded"
+                  className="w-full px-3 py-2 border rounded"
                 >
-                  <option value="txt">TXT</option>
-                  <option value="md">Markdown</option>
-                  <option value="json">JSON</option>
-                  <option value="csv">CSV</option>
+                  <option value="txt">Texto Plano (.txt)</option>
+                  <option value="md">Markdown (.md)</option>
+                  <option value="json">JSON (.json)</option>
+                  <option value="csv">CSV (.csv)</option>
                 </select>
-                <Button
-                  onClick={handleDownload}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar
-                </Button>
               </div>
-            </div>
-          </div>
 
-          {/* Validation Results */}
-          {showValidation && validateQuery.data?.validation && (
-            <div className="mb-4 space-y-2">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm font-semibold text-blue-900">
-                  {validateQuery.data.validation.isValid ? "✓ Validación exitosa" : "✗ Errores encontrados"}
+              {exportQuery.data?.export && (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    <strong>Archivo:</strong> {exportQuery.data.export.filename}
+                  </p>
+                  <Button onClick={handleDownload} className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar Configuración
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          {/* Apply SSH Tab */}
+          <TabsContent value="apply" className="space-y-4">
+            <Card className="p-6 space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ <strong>Advertencia:</strong> Esta función aplicará los comandos directamente en el dispositivo. Asegúrate de tener acceso SSH habilitado.
                 </p>
-                <p className="text-xs text-blue-700">{validateQuery.data.validation.summary}</p>
               </div>
 
-              {validateQuery.data.validation.errors.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-red-900">Errores Críticos:</h4>
-                  {validateQuery.data.validation.errors.map((error: ValidationError, idx: number) => (
-                    <div key={idx} className="p-2 bg-red-50 border border-red-200 rounded text-xs">
-                      <p className="font-semibold text-red-900">Línea {error.line}: {error.issue}</p>
-                      <p className="text-red-700">Sugerencia: {error.suggestion}</p>
-                    </div>
-                  ))}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-2">IP del Dispositivo</label>
+                  <Input
+                    value={deviceIp}
+                    onChange={(e) => setDeviceIp(e.target.value)}
+                    placeholder="Ej: 192.168.1.1"
+                  />
                 </div>
-              )}
 
-              {validateQuery.data.validation.warnings.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-yellow-900">Advertencias:</h4>
-                  {validateQuery.data.validation.warnings.map((warning: ValidationError, idx: number) => (
-                    <div key={idx} className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                      <p className="font-semibold text-yellow-900">Línea {warning.line}: {warning.issue}</p>
-                      <p className="text-yellow-700">Sugerencia: {warning.suggestion}</p>
-                    </div>
-                  ))}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Usuario SSH</label>
+                  <Input
+                    value={deviceUsername}
+                    onChange={(e) => setDeviceUsername(e.target.value)}
+                    placeholder="Ej: admin"
+                  />
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Sections */}
-          <div className="space-y-2">
-            {generateQuery.data.config.sections?.map((section, idx) => (
-              <div key={idx} className="border rounded-lg">
-                <button
-                  onClick={() =>
-                    setExpandedSection(expandedSection === section.name ? null : section.name)
-                  }
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
-                >
-                  <div className="text-left">
-                    <h3 className="font-semibold">{section.name}</h3>
-                    <p className="text-sm text-gray-600">{section.description}</p>
-                  </div>
-                  <span className="text-sm text-gray-500">{section.commands.length} comandos</span>
-                </button>
-
-                {expandedSection === section.name && (
-                  <div className="px-4 py-3 bg-gray-50 border-t">
-                    <pre className="bg-black text-green-400 p-3 rounded text-xs overflow-x-auto font-mono">
-                      {section.commands.join("\n")}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Audit Results */}
-      {auditQuery.data?.audit && (
-        <Card className="p-6">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold mb-2">Resultados de Auditoría</h2>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Puntuación General</span>
-                  <span className="text-2xl font-bold">
-                    {auditQuery.data.audit.overallScore}/100
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all ${
-                      auditQuery.data.audit.overallScore >= 80
-                        ? "bg-green-500"
-                        : auditQuery.data.audit.overallScore >= 60
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
-                    style={{
-                      width: `${auditQuery.data.audit.overallScore}%`,
-                    }}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Contraseña SSH</label>
+                  <Input
+                    type="password"
+                    value={devicePassword}
+                    onChange={(e) => setDevicePassword(e.target.value)}
+                    placeholder="••••••••"
                   />
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* VLSM Compliance */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-            <div className="flex items-start gap-2">
-              {auditQuery.data.audit.vlsmCompliance.compliant ? (
-                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              {applyStatus === "success" && (
+                <div className="bg-green-50 border border-green-200 rounded p-3">
+                  <p className="text-sm text-green-800">✓ Configuración aplicada exitosamente</p>
+                </div>
               )}
-              <div>
-                <h3 className="font-semibold">Cumplimiento VLSM</h3>
-                <p className="text-sm text-gray-700">{auditQuery.data.audit.vlsmCompliance.details}</p>
+
+              {applyStatus === "error" && (
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                  <p className="text-sm text-red-800">✗ Error al aplicar la configuración</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleApplyConfiguration}
+                disabled={isApplying || !deviceIp || !deviceUsername || !devicePassword}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {isApplying ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Aplicando...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Aplicar Configuración
+                  </>
+                )}
+              </Button>
+
+              <div className="text-xs text-gray-600 space-y-1">
+                <p><strong>Total de comandos:</strong> {currentCommands.length}</p>
+                <p><strong>Dispositivo:</strong> {config.vendor.toUpperCase()} {config.deviceType}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="mb-4 p-3 bg-gray-50 border rounded">
-            <h3 className="font-semibold mb-2">Resumen</h3>
-            <Streamdown>{auditQuery.data.audit.summary}</Streamdown>
-          </div>
-
-          {/* Best Practices Applied */}
-          {auditQuery.data.audit.bestPracticesApplied.length > 0 && (
-            <div className="mb-4">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Mejores Prácticas Aplicadas
-              </h3>
-              <ul className="space-y-1">
-                {auditQuery.data.audit.bestPracticesApplied.map((practice, idx) => (
-                  <li key={idx} className="text-sm text-green-700 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-600 rounded-full" />
-                    {practice}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Issues Found */}
-          {auditQuery.data.audit.issues.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                Problemas Encontrados ({auditQuery.data.audit.issues.length})
-              </h3>
-              <div className="space-y-2">
-                {auditQuery.data.audit.issues.map((issue: AuditIssue, idx: number) => (
-                  <div
-                    key={idx}
-                    className={`p-3 border rounded ${getSeverityColor(issue.severity)}`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {getSeverityIcon(issue.severity)}
-                      <div className="flex-1">
-                        <div className="font-semibold text-sm">
-                          [{issue.severity.toUpperCase()}] {issue.issue}
-                        </div>
-                        <div className="text-xs mt-1">
-                          <strong>Categoría:</strong> {issue.category}
-                        </div>
-                        <div className="text-xs mt-1">
-                          <strong>Recomendación:</strong> {issue.recommendation}
-                        </div>
-                        {issue.affectedCommands.length > 0 && (
-                          <div className="text-xs mt-1">
-                            <strong>Comandos Afectados:</strong>
-                            <div className="mt-1 font-mono text-xs bg-black bg-opacity-10 p-1 rounded">
-                              {issue.affectedCommands.slice(0, 2).join(", ")}
-                              {issue.affectedCommands.length > 2 &&
-                                ` +${issue.affectedCommands.length - 2} más`}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* Loading State */}
-      {(generateQuery.isLoading || auditQuery.isLoading) && (
-        <Card className="p-6 flex items-center justify-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>Procesando...</span>
-        </Card>
-      )}
-
-      {/* Error State */}
-      {(generateQuery.error || auditQuery.error) && (
-        <Card className="p-6 bg-red-50 border-red-200">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-red-900">Error</h3>
-              <p className="text-sm text-red-700">
-                {generateQuery.error?.message || auditQuery.error?.message}
-              </p>
-            </div>
-          </div>
-        </Card>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
