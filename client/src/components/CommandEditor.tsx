@@ -226,9 +226,9 @@ export function CommandEditor({
                   commands.map((cmd, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+                      className="flex items-center justify-between bg-gray-900 p-3 rounded border border-gray-700 hover:bg-gray-800 transition-colors"
                     >
-                      <code className="text-xs font-mono flex-1 break-all">{cmd}</code>
+                      <code className="text-xs font-mono flex-1 break-all text-green-400">{cmd}</code>
                       {!readOnly && (
                         <Button
                           variant="ghost"
@@ -258,9 +258,9 @@ export function CommandEditor({
                     {section.commands.map((cmd, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200 hover:bg-gray-100 transition-colors"
+                        className="flex items-center justify-between bg-gray-900 p-3 rounded border border-gray-700 hover:bg-gray-800 transition-colors"
                       >
-                        <code className="text-xs font-mono flex-1 break-all">{cmd}</code>
+                        <code className="text-xs font-mono flex-1 break-all text-green-400">{cmd}</code>
                         {!readOnly && (
                           <Button
                             variant="ghost"
