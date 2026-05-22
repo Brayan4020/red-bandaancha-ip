@@ -68,56 +68,21 @@ export function ConfigGenerator() {
   const [deviceIp, setDeviceIp] = useState("");
   const [deviceUsername, setDeviceUsername] = useState("");
   const [devicePassword, setDevicePassword] = useState("");
+  const [generatedConfig, setGeneratedConfig] = useState<any>(null);
 
-  // Queries
-  const generateQuery = trpc.network.generateConfig.useQuery(config, {
-    enabled: false,
+  // Mutations
+  const generateMutation = trpc.network.generateConfig.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        setGeneratedConfig(data.config);
+        setEditedCommands([]);
+      }
+    },
   });
 
-  const auditQuery = trpc.network.auditConfig.useQuery(
-    {
-      vendor: generateQuery.data?.config?.vendor || "",
-      commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
-      sections: generateQuery.data?.config?.sections || [],
-      site: config.siteId,
-    },
-    {
-      enabled: !!generateQuery.data?.config,
-    }
-  );
-
-  const validateQuery = trpc.network.validateSyntax.useQuery(
-    {
-      vendor: config.vendor,
-      commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
-    },
-    {
-      enabled: !!generateQuery.data?.config && showValidation,
-    }
-  );
-
-  const exportQuery = trpc.network.exportConfig.useQuery(
-    {
-      config: {
-        ...generateQuery.data?.config,
-        commands: editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []),
-      } || {
-        vendor: "",
-        deviceType: "",
-        site: "",
-        commands: [],
-        sections: [],
-        timestamp: 0,
-      },
-      format: exportFormat,
-      includeComments: true,
-      includeSectionHeaders: true,
-    },
-    {
-      enabled: !!generateQuery.data?.config,
-    }
-  );
-
+  const auditMutation = trpc.network.auditConfig.useMutation();
+  const validateMutation = trpc.network.validateSyntax.useMutation();
+  const exportMutation = trpc.network.exportConfig.useMutation();
   const siteTemplateQuery = trpc.network.getSiteTemplate.useQuery(
     {
       vendor: config.vendor,
@@ -132,12 +97,11 @@ export function ConfigGenerator() {
   const applyConfigMutation = trpc.network.applyConfiguration.useMutation();
 
   const handleGenerate = async () => {
-    await generateQuery.refetch();
-    setEditedCommands([]);
+    await generateMutation.mutateAsync(config);
   };
 
   const handleCopyCommands = () => {
-    const commands = editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []);
+    const commands = editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []);
     if (commands.length > 0) {
       const text = commands.join("\n");
       navigator.clipboard.writeText(text);
@@ -146,196 +110,145 @@ export function ConfigGenerator() {
     }
   };
 
-  const handleDownload = () => {
-    if (exportQuery.data?.export) {
+  const handleDownload = async () => {
+    if (!generatedConfig) return;
+    
+    const result = await exportMutation.mutateAsync({
+      config: {
+        ...generatedConfig,
+        commands: editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []),
+      },
+      format: exportFormat,
+      includeComments: true,
+      includeSectionHeaders: true,
+    });
+
+    if (result.success && result.export) {
       const element = document.createElement("a");
-      const file = new Blob([exportQuery.data.export.content], {
-        type: exportQuery.data.export.mimeType,
+      const file = new Blob([result.export.content], {
+        type: result.export.mimeType,
       });
       element.href = URL.createObjectURL(file);
-      element.download = exportQuery.data.export.filename;
+      element.download = result.export.filename;
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
     }
   };
 
-  const handleSaveToHistory = async () => {
-    if (!generateQuery.data?.config) return;
+  const handleValidate = async () => {
+    if (!generatedConfig) return;
+    
+    const result = await validateMutation.mutateAsync({
+      vendor: config.vendor,
+      commands: editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []),
+    });
+    
+    setShowValidation(!!result.success);
+  };
 
+  const handleAudit = async () => {
+    if (!generatedConfig) return;
+    
+    await auditMutation.mutateAsync({
+      vendor: generatedConfig.vendor,
+      commands: editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []),
+      sections: generatedConfig.sections || [],
+      site: config.siteId,
+    });
+  };
+
+  const handleSaveToHistory = async () => {
+    if (!generatedConfig || !configName) return;
+    
     setIsSaving(true);
     try {
       await saveHistoryMutation.mutateAsync({
-        vendor: config.vendor as any,
-        deviceType: config.deviceType as any,
-        siteId: config.siteId as any,
-        configName: configName || `${config.vendor}-${config.siteId}-${new Date().toLocaleDateString()}`,
-        configContent: JSON.stringify({
-          ...generateQuery.data.config,
-          commands: editedCommands.length > 0 ? editedCommands : generateQuery.data.config.commands,
-        }),
-        commandCount: editedCommands.length > 0 ? editedCommands.length : generateQuery.data.config.commands.length,
-        auditScore: auditQuery.data?.audit?.score || 0,
-        auditNotes: auditQuery.data?.audit?.summary || "",
-        tags: [config.vendor, config.siteId, config.deviceType],
+        name: configName,
+        vendor: generatedConfig.vendor,
+        siteId: config.siteId,
+        commands: editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []),
+        sections: generatedConfig.sections || [],
+        notes: "",
       });
       setConfigName("");
-    } catch (error) {
-      console.error("Error saving configuration:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleApplyConfiguration = async () => {
-    if (!generateQuery.data?.config || !deviceIp || !deviceUsername || !devicePassword) {
-      alert("Por favor completa todos los campos");
-      return;
-    }
-
+    if (!generatedConfig || !deviceIp) return;
+    
     setIsApplying(true);
     setApplyStatus("connecting");
-
     try {
-      await applyConfigMutation.mutateAsync({
-        vendor: config.vendor as any,
-        commands: editedCommands.length > 0 ? editedCommands : generateQuery.data.config.commands,
+      const result = await applyConfigMutation.mutateAsync({
         deviceIp,
-        deviceUsername,
-        devicePassword,
-        devicePort: 22,
+        username: deviceUsername,
+        password: devicePassword,
+        commands: editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || []),
+        vendor: generatedConfig.vendor,
       });
-      setApplyStatus("success");
-      setTimeout(() => setApplyStatus("idle"), 3000);
+
+      if (result.success) {
+        setApplyStatus("success");
+      } else {
+        setApplyStatus("error");
+      }
     } catch (error) {
-      console.error("Error applying configuration:", error);
       setApplyStatus("error");
-      setTimeout(() => setApplyStatus("idle"), 3000);
     } finally {
       setIsApplying(false);
     }
   };
 
-  const getSeverityColor = (severity: "critical" | "high" | "medium" | "low" | "info" | "warning") => {
-    switch (severity) {
-      case "critical":
-        return "bg-red-100 text-red-800 border-red-300";
-      case "high":
-        return "bg-orange-100 text-orange-800 border-orange-300";
-      case "warning":
-      case "medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "low":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "info":
-        return "bg-gray-100 text-gray-800 border-gray-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case "critical":
-      case "high":
-        return <AlertTriangle className="w-4 h-4" />;
-      case "warning":
-      case "medium":
-      case "low":
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <CheckCircle className="w-4 h-4" />;
-    }
-  };
-
-  const currentCommands = editedCommands.length > 0 ? editedCommands : (generateQuery.data?.config?.commands || []);
+  const isGenerating = generateMutation.isPending;
+  const isAuditing = auditMutation.isPending;
+  const isValidating = validateMutation.isPending;
+  const isExporting = exportMutation.isPending;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Generador de Configuraciones</h1>
-        <p className="text-gray-600">
-          Genera, edita, audita y aplica configuraciones de red para Huawei, Cisco y Fortinet
-        </p>
+        <p className="text-gray-400">Genera, valida y audita configuraciones de red para Huawei, Cisco y Fortinet</p>
       </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-200 flex items-center justify-center">
-              <span className="text-sm font-bold">⚙️</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm">Generación</h3>
-              <p className="text-xs text-gray-600">Comandos completos para 3 fabricantes</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-green-50 border-green-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-200 flex items-center justify-center">
-              <span className="text-sm font-bold">✓</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm">Edición Visual</h3>
-              <p className="text-xs text-gray-600">Edita y valida comandos antes de aplicar</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 bg-purple-50 border-purple-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-200 flex items-center justify-center">
-              <span className="text-sm font-bold">🚀</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm">Aplicación SSH</h3>
-              <p className="text-xs text-gray-600">Aplica directamente en dispositivos</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Configuration Form */}
-      <Card className="p-6 bg-black text-white">
-        <h2 className="text-lg font-semibold mb-4">Generar Configuración</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Configuration Selection */}
+      <Card className="p-6 bg-slate-900/50 border-slate-700">
+        <h2 className="text-xl font-semibold mb-4">Seleccionar Configuración</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">Sede</label>
             <select
               value={config.siteId}
               onChange={(e) => setConfig({ ...config, siteId: e.target.value as Site })}
-              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
             >
               <option value="sede1">Sede 1 - Teusaquillo</option>
-              <option value="sede2">Sede 2 - Campus U</option>
+              <option value="sede2">Sede 2 - Campus U Compensar</option>
               <option value="sede3">Sede 3 - AV68</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-2">Fabricante</label>
             <select
               value={config.vendor}
               onChange={(e) => setConfig({ ...config, vendor: e.target.value as Vendor })}
-              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
             >
               <option value="huawei">Huawei VRP</option>
               <option value="cisco">Cisco IOS</option>
               <option value="fortinet">Fortinet FortiGate</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-2">Tipo de Dispositivo</label>
             <select
               value={config.deviceType}
               onChange={(e) => setConfig({ ...config, deviceType: e.target.value as DeviceType })}
-              className="w-full px-3 py-2 bg-gray-800 border border-red-500 rounded text-white text-sm"
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
             >
               <option value="switch">Switch</option>
               <option value="router">Router</option>
@@ -344,196 +257,196 @@ export function ConfigGenerator() {
           </div>
         </div>
 
-        <Button onClick={handleGenerate} disabled={generateQuery.isLoading} className="w-full">
-          {generateQuery.isLoading ? (
+        <Button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
+        >
+          {isGenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Generando...
             </>
           ) : (
-            "Generar Configuración"
+            <>
+              <Zap className="w-4 h-4 mr-2" />
+              Generar Configuración
+            </>
           )}
         </Button>
       </Card>
 
-      {/* Results Tabs */}
-      {generateQuery.data?.config && (
-        <Tabs defaultValue="editor" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="editor">Editor Visual</TabsTrigger>
-            <TabsTrigger value="audit">Auditoría</TabsTrigger>
-            <TabsTrigger value="export">Exportar</TabsTrigger>
-            <TabsTrigger value="apply">Aplicar SSH</TabsTrigger>
-          </TabsList>
+      {/* Generated Configuration */}
+      {generatedConfig && (
+        <Card className="p-6 bg-slate-900/50 border-slate-700">
+          <Tabs defaultValue="editor" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 bg-slate-800">
+              <TabsTrigger value="editor">Editor Visual</TabsTrigger>
+              <TabsTrigger value="audit">Auditoría</TabsTrigger>
+              <TabsTrigger value="export">Exportar</TabsTrigger>
+              <TabsTrigger value="apply">Aplicar SSH</TabsTrigger>
+            </TabsList>
 
-          {/* Editor Tab */}
-          <TabsContent value="editor" className="space-y-4">
-            <Card className="p-6">
+            {/* Editor Tab */}
+            <TabsContent value="editor" className="space-y-4">
               <CommandEditor
-                commands={currentCommands}
-                sections={generateQuery.data.config.sections}
-                vendor={config.vendor}
+                commands={editedCommands.length > 0 ? editedCommands : (generatedConfig?.commands || [])}
                 onCommandsChange={setEditedCommands}
+                vendor={config.vendor}
               />
-            </Card>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleCopyCommands}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Copiado
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar Comandos
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleValidate}
+                  disabled={isValidating}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  {isValidating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Validar Sintaxis
+                    </>
+                  )}
+                </Button>
+              </div>
+            </TabsContent>
 
-            <div className="flex gap-2">
-              <Button onClick={handleCopyCommands} variant="outline" className="flex-1">
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Copiado
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Todo
-                  </>
-                )}
-              </Button>
-              <Button onClick={handleSaveToHistory} disabled={isSaving} className="flex-1">
-                {isSaving ? (
+            {/* Audit Tab */}
+            <TabsContent value="audit" className="space-y-4">
+              <Button
+                onClick={handleAudit}
+                disabled={isAuditing}
+                className="w-full bg-amber-600 hover:bg-amber-700"
+              >
+                {isAuditing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Guardando...
+                    Auditando...
                   </>
                 ) : (
-                  "Guardar en Historial"
+                  <>
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Ejecutar Auditoría
+                  </>
                 )}
               </Button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Nombre de la Configuración</label>
-              <Input
-                value={configName}
-                onChange={(e) => setConfigName(e.target.value)}
-                placeholder="Ej: Config-Sede1-2026-05-22"
-              />
-            </div>
-          </TabsContent>
-
-          {/* Audit Tab */}
-          <TabsContent value="audit" className="space-y-4">
-            {auditQuery.isLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            ) : auditQuery.data?.audit ? (
-              <Card className="p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Resultados de Auditoría</h3>
-                  <div className="text-3xl font-bold text-blue-600">{auditQuery.data.audit.score}/100</div>
+              {auditMutation.data?.success && auditMutation.data?.audit && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Resultados de Auditoría</h3>
+                  <Streamdown>{JSON.stringify(auditMutation.data.audit, null, 2)}</Streamdown>
                 </div>
+              )}
+            </TabsContent>
 
-                <p className="text-gray-600">{auditQuery.data.audit.summary}</p>
-
-                {auditQuery.data.audit.issues && auditQuery.data.audit.issues.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-semibold">Problemas Encontrados:</h4>
-                    {auditQuery.data.audit.issues.map((issue: AuditIssue, idx: number) => (
-                      <div key={idx} className={`p-3 rounded border ${getSeverityColor(issue.severity)}`}>
-                        <div className="flex items-start gap-2">
-                          {getSeverityIcon(issue.severity)}
-                          <div className="flex-1">
-                            <p className="font-semibold text-sm">{issue.category}: {issue.issue}</p>
-                            <p className="text-xs mt-1">{issue.recommendation}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            ) : null}
-          </TabsContent>
-
-          {/* Export Tab */}
-          <TabsContent value="export" className="space-y-4">
-            <Card className="p-6 space-y-4">
+            {/* Export Tab */}
+            <TabsContent value="export" className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Formato de Exportación</label>
                 <select
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white"
                 >
-                  <option value="txt">Texto Plano (.txt)</option>
+                  <option value="txt">Texto (.txt)</option>
                   <option value="md">Markdown (.md)</option>
                   <option value="json">JSON (.json)</option>
                   <option value="csv">CSV (.csv)</option>
                 </select>
               </div>
-
-              {exportQuery.data?.export && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <strong>Archivo:</strong> {exportQuery.data.export.filename}
-                  </p>
-                  <Button onClick={handleDownload} className="w-full">
+              <Button
+                onClick={handleDownload}
+                disabled={isExporting}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Exportando...
+                  </>
+                ) : (
+                  <>
                     <Download className="w-4 h-4 mr-2" />
                     Descargar Configuración
-                  </Button>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
+                  </>
+                )}
+              </Button>
 
-          {/* Apply SSH Tab */}
-          <TabsContent value="apply" className="space-y-4">
-            <Card className="p-6 space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ <strong>Advertencia:</strong> Esta función aplicará los comandos directamente en el dispositivo. Asegúrate de tener acceso SSH habilitado.
-                </p>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">Guardar en Historial</label>
+                <Input
+                  placeholder="Nombre de la configuración"
+                  value={configName}
+                  onChange={(e) => setConfigName(e.target.value)}
+                  className="bg-slate-800 border-slate-600"
+                />
+                <Button
+                  onClick={handleSaveToHistory}
+                  disabled={isSaving || !configName}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar en Historial"
+                  )}
+                </Button>
               </div>
+            </TabsContent>
 
+            {/* Apply SSH Tab */}
+            <TabsContent value="apply" className="space-y-4">
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium mb-2">IP del Dispositivo</label>
-                  <Input
-                    value={deviceIp}
-                    onChange={(e) => setDeviceIp(e.target.value)}
-                    placeholder="Ej: 192.168.1.1"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Usuario SSH</label>
-                  <Input
-                    value={deviceUsername}
-                    onChange={(e) => setDeviceUsername(e.target.value)}
-                    placeholder="Ej: admin"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Contraseña SSH</label>
-                  <Input
-                    type="password"
-                    value={devicePassword}
-                    onChange={(e) => setDevicePassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
+                <Input
+                  placeholder="IP del Dispositivo"
+                  value={deviceIp}
+                  onChange={(e) => setDeviceIp(e.target.value)}
+                  className="bg-slate-800 border-slate-600"
+                />
+                <Input
+                  placeholder="Usuario"
+                  value={deviceUsername}
+                  onChange={(e) => setDeviceUsername(e.target.value)}
+                  className="bg-slate-800 border-slate-600"
+                />
+                <Input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={devicePassword}
+                  onChange={(e) => setDevicePassword(e.target.value)}
+                  className="bg-slate-800 border-slate-600"
+                />
               </div>
-
-              {applyStatus === "success" && (
-                <div className="bg-green-50 border border-green-200 rounded p-3">
-                  <p className="text-sm text-green-800">✓ Configuración aplicada exitosamente</p>
-                </div>
-              )}
-
-              {applyStatus === "error" && (
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  <p className="text-sm text-red-800">✗ Error al aplicar la configuración</p>
-                </div>
-              )}
 
               <Button
                 onClick={handleApplyConfiguration}
-                disabled={isApplying || !deviceIp || !deviceUsername || !devicePassword}
-                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={isApplying || !deviceIp}
+                className="w-full bg-red-600 hover:bg-red-700"
               >
                 {isApplying ? (
                   <>
@@ -543,18 +456,21 @@ export function ConfigGenerator() {
                 ) : (
                   <>
                     <Play className="w-4 h-4 mr-2" />
-                    Aplicar Configuración
+                    Aplicar Configuración via SSH
                   </>
                 )}
               </Button>
 
-              <div className="text-xs text-gray-600 space-y-1">
-                <p><strong>Total de comandos:</strong> {currentCommands.length}</p>
-                <p><strong>Dispositivo:</strong> {config.vendor.toUpperCase()} {config.deviceType}</p>
-              </div>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              {applyStatus !== "idle" && (
+                <div className={`p-4 rounded ${applyStatus === "success" ? "bg-green-900/20 border border-green-600" : "bg-red-900/20 border border-red-600"}`}>
+                  <p className={applyStatus === "success" ? "text-green-400" : "text-red-400"}>
+                    {applyStatus === "success" ? "✓ Configuración aplicada exitosamente" : "✗ Error al aplicar la configuración"}
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </Card>
       )}
     </div>
   );

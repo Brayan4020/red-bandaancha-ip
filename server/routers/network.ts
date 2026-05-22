@@ -287,7 +287,7 @@ export const networkRouter = router({
         deviceType: z.enum(["switch", "router", "firewall"]),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         const config = generateConfiguration(input);
         return { success: true, config };
@@ -314,7 +314,7 @@ export const networkRouter = router({
         site: z.enum(["sede1", "sede2", "sede3"]),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         const auditResult = quickAudit(input);
         return { success: true, audit: auditResult };
@@ -333,7 +333,7 @@ export const networkRouter = router({
         commands: z.array(z.string()),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         const validation = validateCommands(input.vendor, input.commands);
         return { success: true, validation };
@@ -367,7 +367,7 @@ export const networkRouter = router({
         includeSectionHeaders: z.boolean().default(true),
       })
     )
-    .query(async ({ input }) => {
+    .mutation(async ({ input }) => {
       try {
         const result = exportConfiguration(input.config, {
           format: input.format,
