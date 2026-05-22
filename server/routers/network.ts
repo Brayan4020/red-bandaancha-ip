@@ -279,7 +279,7 @@ export const networkRouter = router({
   /**
    * Generate configuration commands for a device
    */
-  generateConfig: protectedProcedure
+  generateConfig: publicProcedure
     .input(
       z.object({
         siteId: z.enum(["sede1", "sede2", "sede3"]),
@@ -299,7 +299,7 @@ export const networkRouter = router({
   /**
    * Audit configuration against best practices and VLSM
    */
-  auditConfig: protectedProcedure
+  auditConfig: publicProcedure
     .input(
       z.object({
         vendor: z.string(),
@@ -326,7 +326,7 @@ export const networkRouter = router({
   /**
    * Validate command syntax
    */
-  validateSyntax: protectedProcedure
+  validateSyntax: publicProcedure
     .input(
       z.object({
         vendor: z.enum(["huawei", "cisco", "fortinet"]),
@@ -345,7 +345,7 @@ export const networkRouter = router({
   /**
    * Export configuration in various formats
    */
-  exportConfig: protectedProcedure
+  exportConfig: publicProcedure
     .input(
       z.object({
         config: z.object({
