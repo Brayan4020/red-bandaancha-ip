@@ -457,40 +457,34 @@
                 
                 <!-- Paso 3: Configuración -->
                 <div id="paso-3" class="paso-content">
-                    <div class="form-title">Configura los Parámetros</div>
+                    <h2 style="color: #7fff00; margin-bottom: 20px;">Paso 3: Parámetros del Dispositivo</h2>
                     
                     <div class="form-group">
-                        <label>Nombre del Dispositivo</label>
-                        <input type="text" id="hostname" placeholder="Ej: SEDE1-ROUTER-01">
+                        <label>Hostname / Nombre del Equipo:</label>
+                        <input type="text" id="hostname" class="form-control" placeholder="Ej: RUTA-CORE-S1">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="color: #00d4ff;">Segmento de Red Base (IP/CIDR):</label>
+                        <input type="text" id="ip-base" class="form-control" value="192.168.10.0/24" placeholder="Ej: 10.0.0.0/24 o 192.168.1.0/24">
+                        <small style="color: #888; display: block; margin-top: 2px;">La herramienta segmentará automáticamente las subredes y gateways.</small>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="color: #00d4ff;">IP Loopback (Router ID):</label>
+                        <input type="text" id="ip-loopback" class="form-control" value="1.1.1.1" placeholder="Ej: 172.16.1.1">
                     </div>
                     
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label>Sede</label>
-                            <select id="sede">
-                                <option value="1">Sede 1 - Teusaquillo (172.16.0.0/21)</option>
-                                <option value="2">Sede 2 - Campus U (172.16.8.0/22)</option>
-                                <option value="3">Sede 3 - AV68 (172.16.12.0/23)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Versión de S.O.</label>
-                            <input type="text" id="version" placeholder="Ej: 15.2, 8.5, 7.0">
-                        </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Sede / Ubicación:</label>
+                        <select id="sede" class="form-control">
+                            <option value="1">Sede Principal (Core)</option>
+                            <option value="2">Sede Alterna (Distribución)</option>
+                            <option value="3">Nodo de Acceso Remoto</option>
+                        </select>
                     </div>
                     
-                    <div class="grid-2">
-                        <div class="form-group">
-                            <label for="ip-base">Red Base del Proyecto (CIDR):</label>
-                            <input type="text" id="ip-base" placeholder="Ej: 10.10.0.0/24" value="192.168.1.0/24">
-                        </div>
-                        <div class="form-group">
-                            <label for="ip-loopback">IP Loopback / Router ID:</label>
-                            <input type="text" id="ip-loopback" placeholder="Ej: 1.1.1.1" value="1.1.1.1">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
+                    <div class="form-group" style="margin-top: 15px;">
                         <label>Servicios a Configurar</label>
                         <div class="checkbox-group" id="servicios-checkboxes"></div>
                     </div>
@@ -699,18 +693,60 @@
             });
         }
         
-        // Función básica para calcular IPs dinámicamente según el segmento base
-        function calcularIPPlanning(ipBase) {
-            // Dividimos la IP (Ej: "192.168.1.0/24" -> "192.168.1", "0", "24")
-            const partes = ipBase.split('/')[0].split('.');
-            const tresOctetos = `${partes[0]}.${partes[1]}.${partes[2]}`;
-
-            // Creamos un direccionamiento ordenado e inteligente para las VLANs
-            return {
-                vlan10: { nombre: "VLAN_DATOS", id: "10", ip: `${tresOctetos}.1`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
-                vlan20: { nombre: "VLAN_VOZ",   id: "20", ip: `${tresOctetos}.2`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
-                vlan30: { nombre: "VLAN_MGMT",  id: "30", ip: `${tresOctetos}.254`, mascara: "255.255.255.0", wildcard: "0.0.0.255" }
-            };
+        // Función auxiliar para calcular el IP Planning basándose en la IP ingresada
+        function calcularIPsDinamicas(ipInput) {
+            try {
+                const ipLimpia = ipInput.trim().split('/')[0];
+                const partes = ipLimpia.split('.');
+                
+                if(partes.length !== 4) throw new Error("IP Inválida");
+                
+                // Extraemos los primeros 3 octetos (Ej: "192.168.10")
+                const raizIP = `${partes[0]}.${partes[1]}.${partes[2]}`;
+                
+                return {
+                    vlan10: { id: "10", nombre: "VLAN_DATOS", ip: `${raizIP}.1`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan20: { id: "20", nombre: "VLAN_VOZ",   ip: `${raizIP}.2`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan30: { id: "30", nombre: "VLAN_MGMT",  ip: `${raizIP}.254`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    redBase: ipLimpia
+                };
+            } catch(e) {
+                // En caso de error de escritura del usuario, se usan valores seguros por defecto
+                return {
+                    vlan10: { id: "10", nombre: "VLAN_DATOS", ip: "192.168.10.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan20: { id: "20", nombre: "VLAN_VOZ",   ip: "192.168.20.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan30: { id: "30", nombre: "VLAN_MGMT",  ip: "192.168.30.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    redBase: "192.168.10.0"
+                };
+            }
+        }
+        
+        // Función auxiliar para calcular el IP Planning basándose en la IP ingresada
+        function calcularIPsDinamicas(ipInput) {
+            try {
+                const ipLimpia = ipInput.trim().split('/')[0];
+                const partes = ipLimpia.split('.');
+                
+                if(partes.length !== 4) throw new Error("IP Inválida");
+                
+                // Extraemos los primeros 3 octetos (Ej: "192.168.10")
+                const raizIP = `${partes[0]}.${partes[1]}.${partes[2]}`;
+                
+                return {
+                    vlan10: { id: "10", nombre: "VLAN_DATOS", ip: `${raizIP}.1`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan20: { id: "20", nombre: "VLAN_VOZ",   ip: `${raizIP}.2`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan30: { id: "30", nombre: "VLAN_MGMT",  ip: `${raizIP}.254`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    redBase: ipLimpia
+                };
+            } catch(e) {
+                // En caso de error de escritura del usuario, se usan valores seguros por defecto
+                return {
+                    vlan10: { id: "10", nombre: "VLAN_DATOS", ip: "192.168.10.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan20: { id: "20", nombre: "VLAN_VOZ",   ip: "192.168.20.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    vlan30: { id: "30", nombre: "VLAN_MGMT",  ip: "192.168.30.1", mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                    redBase: "192.168.10.0"
+                };
+            }
         }
         
         // Función para generar comandos dinámicos completos por fabricante
@@ -846,14 +882,98 @@ end`;
         }
         
         function generarConfiguracion() {
-            estadoWizard.hostname = document.getElementById('hostname').value || `SEDE${document.getElementById('sede').value}-${estadoWizard.dispositivo.toUpperCase()}`;
-            estadoWizard.sede = document.getElementById('sede').value;
-            estadoWizard.ipBase = document.getElementById('ip-base').value;
-            estadoWizard.ipLoopback = document.getElementById('ip-loopback').value;
-            estadoWizard.servicios = Array.from(document.querySelectorAll('#servicios-checkboxes input:checked')).map(el => el.parentElement.textContent.trim());
+            // 1. Capturamos los datos ingresados en el formulario
+            const ipBaseValue = document.getElementById('ip-base').value || "192.168.10.0/24";
+            const loopbackValue = document.getElementById('ip-loopback').value || "1.1.1.1";
+            const hostname = document.getElementById('hostname').value || "ROUTER-NODO";
             
-            // Calcular IP Planning
-            estadoWizard.ipPlanning = calcularIPPlanning(estadoWizard.ipBase);
+            // Guardamos los valores actualizados en el estado del Wizard
+            estadoWizard.hostname = hostname;
+            estadoWizard.sede = document.getElementById('sede').options[document.getElementById('sede').selectedIndex].text;
+            estadoWizard.version = document.getElementById('version').value;
+
+            // 2. Ejecutar motor de IP Planning dinámico
+            const red = calcularIPsDinamicas(ipBaseValue);
+            const fabricante = estadoWizard.fabricante;
+            let textoComandos = "";
+
+            // 3. Evaluar fabricante e inyectar variables calculadas dinámicamente
+            if (fabricante === "cisco") {
+                textoComandos = `! ==========================================
+! CONFIGURACIÓN AVANZADA CISCO (IP PLANNING AUTOMÁTICO)
+! ==========================================
+hostname ${hostname}
+!
+interface Loopback0
+ ip address ${loopbackValue} 255.255.255.255
+!
+interface GigabitEthernet0/0.${red.vlan10.id}
+ description ${red.vlan10.nombre}
+ encapsulation dot1Q ${red.vlan10.id}
+ ip address ${red.vlan10.ip} ${red.vlan10.mascara}
+!
+interface GigabitEthernet0/0.${red.vlan20.id}
+ description ${red.vlan20.nombre}
+ encapsulation dot1Q ${red.vlan20.id}
+ ip address ${red.vlan20.ip} ${red.vlan20.mascara}
+!
+router ospf 1
+ router-id ${loopbackValue}
+ network ${red.redBase} ${red.vlan10.wildcard} area 0
+!`;
+            } 
+            else if (fabricante === "huawei") {
+                textoComandos = `# ==========================================
+# CONFIGURACIÓN AVANZADA HUAWEI (IP PLANNING AUTOMÁTICO)
+# ==========================================
+sysname ${hostname}
+#
+interface LoopBack0
+ ip address ${loopbackValue} 255.255.255.255
+#
+interface GigabitEthernet0/0/0.${red.vlan10.id}
+ description ${red.vlan10.nombre}
+ dot1q termination vid ${red.vlan10.id}
+ ip address ${red.vlan10.ip} ${red.vlan10.mascara}
+ arp broadcast enable
+#
+interface GigabitEthernet0/0/0.${red.vlan20.id}
+ description ${red.vlan20.nombre}
+ dot1q termination vid ${red.vlan20.id}
+ ip address ${red.vlan20.ip} ${red.vlan20.mascara}
+ arp broadcast enable
+#
+ospf 1 router-id ${loopbackValue}
+ area 0.0.0.0
+  network ${red.redBase} ${red.vlan10.wildcard}
+#`;
+            } 
+            else if (fabricante === "fortinet") {
+                textoComandos = `# ==========================================
+# CONFIGURACIÓN AVANZADA FORTINET (IP PLANNING AUTOMÁTICO)
+# ==========================================
+config system global
+    set hostname ${hostname}
+end
+
+config system interface
+    edit "${red.vlan10.nombre}"
+        set vdom "root"
+        set ip ${red.vlan10.ip} ${red.vlan10.mascara}
+        set interface "port1"
+        set vlanid ${red.vlan10.id}
+    next
+    edit "${red.vlan20.nombre}"
+        set vdom "root"
+        set ip ${red.vlan20.ip} ${red.vlan20.mascara}
+        set interface "port1"
+        set vlanid ${red.vlan20.id}
+    next
+end`;
+            }
+
+            // 4. Inyectar el resultado en el cuadro de texto del paso 4
+            document.getElementById('editor-text').value = textoComandos;
             
             let comandos_list = [];
             
