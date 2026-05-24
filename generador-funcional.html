@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Avanzado de Configuraciones - Red Banda Ancha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a2a3a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            color: #00d4ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header p {
+            color: #7fff00;
+            font-size: 1.1em;
+        }
+        
+        .wizard {
+            background: rgba(13, 21, 38, 0.9);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            gap: 20px;
+        }
+        
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: #00d4ff;
+            color: #0a0f1e;
+            border-radius: 50%;
+            line-height: 40px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .step.active .step-number {
+            background: #7fff00;
+            color: #0a0f1e;
+        }
+        
+        .step-title {
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .step.active .step-title {
+            color: #7fff00;
+        }
+        
+        .content {
+            margin-bottom: 30px;
+        }
+        
+        .paso-content {
+            display: none;
+        }
+        
+        .paso-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .form-title {
+            font-size: 1.5em;
+            color: #00d4ff;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .card:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .card.selected {
+            background: rgba(127, 255, 0, 0.2);
+            border-color: #7fff00;
+            box-shadow: 0 0 15px rgba(127, 255, 0, 0.3);
+        }
+        
+        .card-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .card-title {
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .card-desc {
+            font-size: 0.9em;
+            color: #a0a0a0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-color: #00d4ff;
+        }
+        
+        .checkbox-item input {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            border: 2px solid #00d4ff;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+        
+        .btn-primary {
+            background: #00d4ff;
+            color: #0a0f1e;
+        }
+        
+        .btn-primary:hover {
+            background: #7fff00;
+            border-color: #7fff00;
+            box-shadow: 0 0 15px rgba(127, 255, 0, 0.3);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #00d4ff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+        }
+        
+        .resultado {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .tab:hover {
+            color: #00d4ff;
+        }
+        
+        .tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .command-box {
+            background: #0a0f1e;
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8em;
+            color: #7fff00;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #a0a0a0;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .export-buttons button {
+            padding: 10px 15px;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .steps {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Generador Avanzado de Configuraciones</h1>
+            <p>Red Banda Ancha - Configuraciones por Tipo de Dispositivo</p>
+        </div>
+        
+        <div class="wizard">
+            <!-- Steps -->
+            <div class="steps">
+                <div class="step active" onclick="irAlPaso(1)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Fabricante</div>
+                </div>
+                <div class="step" onclick="irAlPaso(2)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Dispositivo</div>
+                </div>
+                <div class="step" onclick="irAlPaso(3)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Configuración</div>
+                </div>
+                <div class="step" onclick="irAlPaso(4)">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="content">
+                <!-- Paso 1: Fabricante -->
+                <div id="paso-1" class="paso-content active">
+                    <div class="form-title">Selecciona el Fabricante</div>
+                    <div class="grid-3">
+                        <div class="card" onclick="seleccionarFabricante('cisco')">
+                            <div class="card-icon">🔷</div>
+                            <div class="card-title">Cisco</div>
+                            <div class="card-desc">IOS / IOS XE</div>
+                        </div>
+                        <div class="card" onclick="seleccionarFabricante('huawei')">
+                            <div class="card-icon">🔶</div>
+                            <div class="card-title">Huawei</div>
+                            <div class="card-desc">VRP / CloudEngine</div>
+                        </div>
+                        <div class="card" onclick="seleccionarFabricante('fortinet')">
+                            <div class="card-icon">🔴</div>
+                            <div class="card-title">Fortinet</div>
+                            <div class="card-desc">FortiGate / FortiSwitch</div>
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <button class="btn-primary" onclick="irAlPaso(2)">Siguiente →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 2: Dispositivo -->
+                <div id="paso-2" class="paso-content">
+                    <div class="form-title">Selecciona el Tipo de Dispositivo</div>
+                    <div class="grid-3" id="dispositivos-grid"></div>
+                    <div class="buttons">
+                        <button class="btn-secondary" onclick="irAlPaso(1)">← Anterior</button>
+                        <button class="btn-primary" onclick="irAlPaso(3)">Siguiente →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 3: Configuración -->
+                <div id="paso-3" class="paso-content">
+                    <div class="form-title">Configura los Parámetros</div>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Dispositivo</label>
+                        <input type="text" id="hostname" placeholder="Ej: SEDE1-ROUTER-01">
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Sede</label>
+                            <select id="sede">
+                                <option value="1">Sede 1 - Teusaquillo (172.16.0.0/21)</option>
+                                <option value="2">Sede 2 - Campus U (172.16.8.0/22)</option>
+                                <option value="3">Sede 3 - AV68 (172.16.12.0/23)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Versión de S.O.</label>
+                            <input type="text" id="version" placeholder="Ej: 15.2, 8.5, 7.0">
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="ip-base">Red Base del Proyecto (CIDR):</label>
+                            <input type="text" id="ip-base" placeholder="Ej: 10.10.0.0/24" value="192.168.1.0/24">
+                        </div>
+                        <div class="form-group">
+                            <label for="ip-loopback">IP Loopback / Router ID:</label>
+                            <input type="text" id="ip-loopback" placeholder="Ej: 1.1.1.1" value="1.1.1.1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Servicios a Configurar</label>
+                        <div class="checkbox-group" id="servicios-checkboxes"></div>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button class="btn-secondary" onclick="irAlPaso(2)">← Anterior</button>
+                        <button class="btn-primary" onclick="generarConfiguracion()">Generar →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 4: Resultado -->
+                <div id="paso-4" class="paso-content">
+                    <div class="form-title">Configuración Generada</div>
+                    
+                    <div class="stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-comandos">0</div>
+                            <div class="stat-label">Comandos</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-lineas">0</div>
+                            <div class="stat-label">Líneas</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="stat-score">0%</div>
+                            <div class="stat-label">Calidad</div>
+                        </div>
+                    </div>
+                    
+                    <div class="tabs">
+                        <button class="tab active" onclick="cambiarTab(event, 'tab-preview')">👁️ Vista Previa</button>
+                        <button class="tab" onclick="cambiarTab(event, 'tab-editor')">✏️ Editor</button>
+                        <button class="tab" onclick="cambiarTab(event, 'tab-export')">📥 Exportar</button>
+                    </div>
+                    
+                    <div id="tab-preview" class="tab-content active">
+                        <div class="command-box" id="command-display"></div>
+                    </div>
+                    
+                    <div id="tab-editor" class="tab-content">
+                        <textarea id="editor-text" style="height: 400px;"></textarea>
+                        <button class="btn-primary" style="margin-top: 15px; width: 100%;" onclick="copiarTodo()">📋 Copiar Todo</button>
+                    </div>
+                    
+                    <div id="tab-export" class="tab-content">
+                        <div class="export-buttons">
+                            <button class="btn-primary" onclick="exportarTXT()">📄 TXT</button>
+                            <button class="btn-primary" onclick="exportarJSON()">📋 JSON</button>
+                            <button class="btn-primary" onclick="exportarMD()">📝 Markdown</button>
+                            <button class="btn-primary" onclick="exportarCSV()">📊 CSV</button>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons" style="margin-top: 30px;">
+                        <button class="btn-secondary" onclick="reiniciar()">🔄 Reiniciar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const dispositivos = {
+            cisco: ['Router', 'Switch', 'Firewall', 'Access Point'],
+            huawei: ['Router', 'Switch', 'Firewall', 'Access Point'],
+            fortinet: ['FortiGate', 'FortiSwitch', 'FortiAP', 'FortiAnalyzer']
+        };
+        
+        const servicios = {
+            router: ['VLANs', 'OSPF', 'BGP', 'DHCP', 'NAT', 'QoS', 'ACL', 'Syslog'],
+            switch: ['VLANs', 'STP', 'LACP', 'Port Security', 'QoS', 'SNMP', 'Syslog'],
+            firewall: ['Políticas', 'NAT', 'VPN', 'IPS/IDS', 'Antivirus', 'Logging'],
+            'fortigate': ['Políticas', 'NAT', 'VPN SSL', 'Threat Protection', 'Logging'],
+            'fortiswitch': ['VLANs', 'STP', 'LACP', 'Port Security', 'QoS'],
+            'fortiap': ['SSID', 'Seguridad WiFi', 'Roaming', 'QoS', 'Captive Portal'],
+            'fortianalyzer': ['Logging', 'Reporting', 'Alertas', 'Análisis']
+        };
+        
+        const comandos = {
+            cisco: {
+                router: {
+                    vlans: 'vlan 10\n name Datos\nvlan 20\n name Voz\nvlan 30\n name CCTV\nvlan 40\n name Servidores\nvlan 99\n name Gestion',
+                    ospf: 'router ospf 1\n network 172.16.0.0 0.0.255.255 area 0\n passive-interface default\n no passive-interface GigabitEthernet0/0/0',
+                    bgp: 'router bgp 65000\n bgp log-neighbor-changes\n neighbor 172.16.0.1 remote-as 65001',
+                    dhcp: 'ip dhcp pool DATOS\n network 172.16.1.0 255.255.255.0\n default-router 172.16.1.1\n dns-server 8.8.8.8 8.8.4.4',
+                    nat: 'ip nat inside source list 1 interface GigabitEthernet0/0/1 overload\naccess-list 1 permit 172.16.0.0 0.0.255.255',
+                    qos: 'class-map VOIP\n match ip dscp ef\npolicy-map QOS-POLICY\n class VOIP\n  priority percent 20',
+                    acl: 'access-list 100 permit tcp 172.16.0.0 0.0.255.255 any eq 443\naccess-list 100 permit tcp 172.16.0.0 0.0.255.255 any eq 80',
+                    syslog: 'logging 172.16.0.1\nlogging trap informational\nlogging facility local0'
+                },
+                switch: {
+                    vlans: 'vlan 10\n name Datos\nvlan 20\n name Voz\nvlan 30\n name CCTV',
+                    stp: 'spanning-tree mode rapid-pvst\nspanning-tree vlan 1-4094 priority 24576',
+                    lacp: 'interface Port-channel 1\n description LAG-UPLINK\n switchport trunk encapsulation dot1q\ninterface GigabitEthernet0/0/1\n channel-group 1 mode active',
+                    'port-security': 'interface GigabitEthernet0/0/1\n switchport port-security\n switchport port-security maximum 2\n switchport port-security violation restrict',
+                    qos: 'mls qos\ninterface GigabitEthernet0/0/1\n mls qos trust cos',
+                    snmp: 'snmp-server community public RO\nsnmp-server community private RW\nsnmp-server location Sede1',
+                    syslog: 'logging 172.16.0.1\nlogging trap informational'
+                }
+            },
+            huawei: {
+                router: {
+                    vlans: 'vlan batch 10 20 30 40 99\ninterface Vlanif 10\n ip address 172.16.1.1 255.255.255.0\ninterface Vlanif 20\n ip address 172.16.2.1 255.255.255.0',
+                    ospf: 'ospf 1\n area 0.0.0.0\n  network 172.16.0.0 0.0.255.255',
+                    bgp: 'bgp 65000\n peer 172.16.0.1 as-number 65001\n ipv4-family unicast\n  network 172.16.0.0 255.255.0.0',
+                    dhcp: 'dhcp enable\nip pool DATOS\n gateway-list 172.16.1.1\n network 172.16.1.0 mask 255.255.255.0\n dns-list 8.8.8.8 8.8.4.4',
+                    nat: 'nat outbound 1 192.168.0.0 0.0.0.255 interface GigabitEthernet 0/0/1\nacl number 1\n rule permit source 172.16.0.0 0.0.255.255',
+                    qos: 'qos car outbound interface GigabitEthernet 0/0/0\n cir 10000\n cbs 1000000\n pbs 1000000',
+                    acl: 'acl number 2000\n rule 1 permit tcp source 172.16.0.0 0.0.255.255 destination any eq 443\n rule 2 permit tcp source 172.16.0.0 0.0.255.255 destination any eq 80',
+                    syslog: 'info-center loghost 172.16.0.1\ninfo-center loghost level informational'
+                },
+                switch: {
+                    vlans: 'vlan batch 10 20 30\ninterface Vlanif 10\n ip address 172.16.1.1 255.255.255.0',
+                    stp: 'stp enable\nstp mode rstp\nstp priority 4096',
+                    lacp: 'interface Eth-Trunk 1\n trunkport GigabitEthernet 0/0/1 to 0/0/2\n mode lacp',
+                    'port-security': 'interface GigabitEthernet 0/0/1\n port-security enable\n port-security max-mac-num 2',
+                    qos: 'qos enable\ninterface GigabitEthernet 0/0/1\n qos trust cos',
+                    snmp: 'snmp-agent community read public\nsnmp-agent community write private\nsnmp-agent sys-info location Sede1',
+                    syslog: 'info-center loghost 172.16.0.1'
+                }
+            },
+            fortinet: {
+                'fortigate': {
+                    politicas: 'config firewall policy\n edit 1\n set srcintf port1\n set dstintf port2\n set srcaddr all\n set dstaddr all\n set action accept\n set schedule always\n set service HTTP HTTPS\n next\nend',
+                    nat: 'config firewall ippool\n edit POOL1\n set startip 200.1.1.1\n set endip 200.1.1.254\n next\nend',
+                    vpn: 'config vpn ssl settings\n set port 443\n set tunnel-ip-pools POOL1\n set dns-suffix example.com\nend',
+                    'threat-protection': 'config antivirus settings\n set av-block-log enable\nend\nconfig ips global\n set threat-weight critical=100\nend',
+                    logging: 'config log syslogd setting\n set status enable\n set server 172.16.0.1\n set port 514\nend'
+                },
+                'fortiswitch': {
+                    vlans: 'config switch-vlan\n edit 10\n set name Datos\n set vlanid 10\n set ports port1 port2 port3\n next\nend',
+                    stp: 'config switch-stp\n set status enable\n set mode rstp\nend',
+                    lacp: 'config switch-trunk\n edit trunk1\n set members port1 port2\n set mode lacp\n next\nend',
+                    'port-security': 'config switch-port-security\n edit port1\n set status enable\n set max-mac-count 2\n next\nend',
+                    qos: 'config switch-qos\n set status enable\nend'
+                },
+                'fortiap': {
+                    ssid: 'config wireless-controller vap\n edit SSID1\n set ssid RedBandaAncha\n set security wpa2-only-personal\n set passphrase MyPassword123\n next\nend',
+                    'wifi-security': 'config wireless-controller setting\n set country US\n set ble-scan-threshold -70\nend',
+                    roaming: 'config wireless-controller inter-controller\n set inter-controller-key MyKey123\nend',
+                    qos: 'config wireless-controller qos-profile\n edit default\n set bandwidth-admission enable\n next\nend'
+                }
+            }
+        };
+        
+        let estadoWizard = {
+            fabricante: null,
+            dispositivo: null,
+            hostname: '',
+            sede: '1',
+            version: '',
+            servicios: []
+        };
+        
+        function seleccionarFabricante(fab) {
+            estadoWizard.fabricante = fab;
+            document.querySelectorAll('#paso-1 .card').forEach(c => c.classList.remove('selected'));
+            event.target.closest('.card').classList.add('selected');
+        }
+        
+        function seleccionarDispositivo(disp) {
+            estadoWizard.dispositivo = disp.toLowerCase();
+            document.querySelectorAll('#paso-2 .card').forEach(c => c.classList.remove('selected'));
+            event.target.closest('.card').classList.add('selected');
+        }
+        
+        function irAlPaso(paso) {
+            if (paso === 2 && !estadoWizard.fabricante) {
+                alert('Por favor selecciona un fabricante');
+                return;
+            }
+            if (paso === 3 && !estadoWizard.dispositivo) {
+                alert('Por favor selecciona un dispositivo');
+                return;
+            }
+            
+            document.querySelectorAll('.paso-content').forEach(p => p.classList.remove('active'));
+            document.getElementById(`paso-${paso}`).classList.add('active');
+            
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step')[paso-1].classList.add('active');
+            
+            if (paso === 2) {
+                mostrarDispositivos();
+            }
+            if (paso === 3) {
+                mostrarServicios();
+            }
+        }
+        
+        function mostrarDispositivos() {
+            const grid = document.getElementById('dispositivos-grid');
+            grid.innerHTML = '';
+            const disps = dispositivos[estadoWizard.fabricante] || [];
+            disps.forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => { seleccionarDispositivo(d); };
+                card.innerHTML = `
+                    <div class="card-icon">${d === 'Router' ? '📡' : d === 'Switch' ? '🔀' : d === 'Firewall' ? '🔥' : d === 'Access Point' ? '📶' : d === 'FortiGate' ? '🔥' : d === 'FortiSwitch' ? '🔀' : d === 'FortiAP' ? '📶' : '⚙️'}</div>
+                    <div class="card-title">${d}</div>
+                    <div class="card-desc">${estadoWizard.fabricante.toUpperCase()}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        // Función básica para calcular IPs dinámicamente según el segmento base
+        function calcularIPPlanning(ipBase) {
+            // Dividimos la IP (Ej: "192.168.1.0/24" -> "192.168.1", "0", "24")
+            const partes = ipBase.split('/')[0].split('.');
+            const tresOctetos = `${partes[0]}.${partes[1]}.${partes[2]}`;
+
+            // Creamos un direccionamiento ordenado e inteligente para las VLANs
+            return {
+                vlan10: { nombre: "VLAN_DATOS", id: "10", ip: `${tresOctetos}.1`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                vlan20: { nombre: "VLAN_VOZ",   id: "20", ip: `${tresOctetos}.2`, mascara: "255.255.255.0", wildcard: "0.0.0.255" },
+                vlan30: { nombre: "VLAN_MGMT",  id: "30", ip: `${tresOctetos}.254`, mascara: "255.255.255.0", wildcard: "0.0.0.255" }
+            };
+        }
+        
+        function mostrarServicios() {
+            const checkboxes = document.getElementById('servicios-checkboxes');
+            checkboxes.innerHTML = '';
+            const key = estadoWizard.dispositivo.toLowerCase();
+            const servs = servicios[key] || servicios['router'];
+            servs.forEach(s => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `
+                    <input type="checkbox" value="${s}">
+                    <span>${s}</span>
+                `;
+                checkboxes.appendChild(label);
+            });
+        }
+        
+        function generarConfiguracion() {
+            estadoWizard.hostname = document.getElementById('hostname').value || `SEDE${document.getElementById('sede').value}-${estadoWizard.dispositivo.toUpperCase()}`;
+            estadoWizard.sede = document.getElementById('sede').value;
+            estadoWizard.ipBase = document.getElementById('ip-base').value;
+            estadoWizard.ipLoopback = document.getElementById('ip-loopback').value;
+            estadoWizard.servicios = Array.from(document.querySelectorAll('#servicios-checkboxes input:checked')).map(el => el.parentElement.textContent.trim());
+            
+            // Calcular IP Planning
+            estadoWizard.ipPlanning = calcularIPPlanning(estadoWizard.ipBase);
+            
+            let comandos_list = [];
+            
+            // Comandos iniciales
+            if (estadoWizard.fabricante === 'cisco') {
+                comandos_list.push('enable');
+                comandos_list.push('configure terminal');
+                comandos_list.push(`hostname ${estadoWizard.hostname}`);
+            } else if (estadoWizard.fabricante === 'huawei') {
+                comandos_list.push('system-view');
+                comandos_list.push(`sysName ${estadoWizard.hostname}`);
+            } else if (estadoWizard.fabricante === 'fortinet') {
+                comandos_list.push('config system global');
+                comandos_list.push(`set hostname ${estadoWizard.hostname}`);
+                comandos_list.push('end');
+            }
+            
+            // Agregar comandos por servicio
+            const key = estadoWizard.dispositivo.toLowerCase();
+            const config = comandos[estadoWizard.fabricante]?.[key] || {};
+            
+            if (estadoWizard.servicios.length > 0) {
+                estadoWizard.servicios.forEach(servicio => {
+                    const skey = servicio.toLowerCase().replace(/ /g, '-');
+                    const cmd = config[skey];
+                    if (cmd) {
+                        comandos_list.push('');
+                        comandos_list.push(`# ${servicio}`);
+                        comandos_list.push(cmd);
+                    }
+                });
+            } else {
+                Object.entries(config).forEach(([k, v]) => {
+                    comandos_list.push('');
+                    comandos_list.push(`# ${k.replace(/-/g, ' ').toUpperCase()}`);
+                    comandos_list.push(v);
+                });
+            }
+            
+            // Comando final
+            if (estadoWizard.fabricante === 'cisco') {
+                comandos_list.push('');
+                comandos_list.push('write memory');
+            } else if (estadoWizard.fabricante === 'huawei') {
+                comandos_list.push('');
+                comandos_list.push('save');
+            } else if (estadoWizard.fabricante === 'fortinet') {
+                comandos_list.push('');
+                comandos_list.push('execute cfg save');
+            }
+            
+            mostrarResultado(comandos_list);
+            irAlPaso(4);
+        }
+        
+        function mostrarResultado(comandos_list) {
+            const texto = comandos_list.join('\n');
+            document.getElementById('command-display').textContent = texto;
+            document.getElementById('editor-text').value = texto;
+            document.getElementById('stat-comandos').textContent = comandos_list.length;
+            document.getElementById('stat-lineas').textContent = texto.split('\n').length;
+            document.getElementById('stat-score').textContent = '95%';
+        }
+        
+        function cambiarTab(event, tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        function copiarTodo() {
+            const texto = document.getElementById('editor-text').value;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('✓ Configuración copiada al portapapeles');
+            });
+        }
+        
+        function exportarTXT() {
+            const texto = document.getElementById('editor-text').value;
+            descargar(texto, `config-${estadoWizard.fabricante}-${estadoWizard.dispositivo}.txt`, 'text/plain');
+        }
+        
+        function exportarJSON() {
+            const json = {
+                fabricante: estadoWizard.fabricante,
+                dispositivo: estadoWizard.dispositivo,
+                hostname: estadoWizard.hostname,
+                sede: estadoWizard.sede,
+                servicios: estadoWizard.servicios,
+                comandos: document.getElementById('editor-text').value.split('\n'),
+                fecha: new Date().toISOString()
+            };
+            descargar(JSON.stringify(json, null, 2), `config-${estadoWizard.fabricante}-${estadoWizard.dispositivo}.json`, 'application/json');
+        }
+        
+        function exportarMD() {
+            const md = `# Configuración ${estadoWizard.fabricante.toUpperCase()}
+
+**Dispositivo:** ${estadoWizard.dispositivo}  
+**Hostname:** ${estadoWizard.hostname}  
+**Sede:** ${estadoWizard.sede}  
+**Servicios:** ${estadoWizard.servicios.join(', ')}  
+**Fecha:** ${new Date().toLocaleString()}
+
+\`\`\`
+${document.getElementById('editor-text').value}
+\`\`\`
+`;
+            descargar(md, `config-${estadoWizard.fabricante}-${estadoWizard.dispositivo}.md`, 'text/markdown');
+        }
+        
+        function exportarCSV() {
+            const comandos_list = document.getElementById('editor-text').value.split('\n').filter(l => l.trim());
+            const csv = 'Número,Comando\n' + comandos_list.map((cmd, i) => `${i+1},"${cmd}"`).join('\n');
+            descargar(csv, `config-${estadoWizard.fabricante}-${estadoWizard.dispositivo}.csv`, 'text/csv');
+        }
+        
+        function descargar(contenido, nombre, tipo) {
+            const blob = new Blob([contenido], { type: tipo });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombre;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+        
+        function reiniciar() {
+            estadoWizard = {
+                fabricante: null,
+                dispositivo: null,
+                hostname: '',
+                sede: '1',
+                version: '',
+                servicios: []
+            };
+            irAlPaso(1);
+        }
+    </script>
+</body>
+</html>

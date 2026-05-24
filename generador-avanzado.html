@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Avanzado de Configuraciones - Red Banda Ancha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        
+        .wizard-container {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        .wizard-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            background: rgba(0, 212, 255, 0.05);
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .wizard-step {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .wizard-step.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        
+        .wizard-step.completed {
+            background: rgba(127, 255, 0, 0.1);
+            color: #7fff00;
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: rgba(0, 212, 255, 0.2);
+            border-radius: 50%;
+            line-height: 30px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+        
+        .wizard-step.active .step-number {
+            background: #00d4ff;
+            color: #0a0f1e;
+        }
+        
+        .wizard-step.completed .step-number {
+            background: #7fff00;
+            color: #0a0f1e;
+        }
+        
+        .step-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .wizard-content {
+            padding: 40px;
+        }
+        
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .device-card {
+            background: rgba(10, 15, 30, 0.8);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .device-card:hover {
+            border-color: rgba(0, 212, 255, 0.6);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .device-card.selected {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: #00d4ff;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .device-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .device-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+        
+        .device-description {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-title {
+            color: #00d4ff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            padding: 12px;
+            background: rgba(10, 15, 30, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: flex-end;
+        }
+        
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #00a8cc);
+            color: #0a0f1e;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .result-container {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            display: none;
+        }
+        
+        .result-container.show {
+            display: block;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .result-title {
+            color: #00d4ff;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .result-stats {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            color: #7fff00;
+            font-weight: 700;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.1);
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab:hover {
+            color: #00d4ff;
+        }
+        
+        .tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .command-display {
+            background: #0a0f1e;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #00d4ff;
+            max-height: 500px;
+            overflow-y: auto;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .command-section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+        
+        .command-section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-label {
+            color: #7fff00;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .export-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-btn {
+            padding: 12px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 1024px) {
+            .wizard-steps {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .device-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .wizard-steps {
+                grid-template-columns: 1fr;
+            }
+            .device-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Generador Avanzado de Configuraciones</h1>
+            <p class="subtitle">Red Banda Ancha - Configuraciones por Tipo de Dispositivo</p>
+        </header>
+        
+        <div class="wizard-container">
+            <div class="wizard-steps">
+                <div class="wizard-step active" onclick="irAlPaso(1)">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Fabricante</div>
+                </div>
+                <div class="wizard-step" onclick="irAlPaso(2)">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Dispositivo</div>
+                </div>
+                <div class="wizard-step" onclick="irAlPaso(3)">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Configuración</div>
+                </div>
+                <div class="wizard-step" onclick="irAlPaso(4)">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                </div>
+            </div>
+            
+            <div class="wizard-content">
+                <!-- Paso 1: Fabricante -->
+                <div id="paso-1" class="paso-content">
+                    <div class="form-title">Selecciona el Fabricante</div>
+                    <div class="device-grid">
+                        <div class="device-card" onclick="seleccionarFabricante('cisco')">
+                            <div class="device-icon">🔴</div>
+                            <div class="device-name">Cisco</div>
+                            <div class="device-description">IOS, IOS XE</div>
+                        </div>
+                        <div class="device-card" onclick="seleccionarFabricante('huawei')">
+                            <div class="device-icon">🟡</div>
+                            <div class="device-name">Huawei</div>
+                            <div class="device-description">VRP, CloudEngine</div>
+                        </div>
+                        <div class="device-card" onclick="seleccionarFabricante('fortinet')">
+                            <div class="device-icon">🟠</div>
+                            <div class="device-name">Fortinet</div>
+                            <div class="device-description">FortiGate, FortiOS</div>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="irAlPaso(2)">Siguiente →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 2: Tipo de Dispositivo -->
+                <div id="paso-2" class="paso-content" style="display:none;">
+                    <div class="form-title">Selecciona el Tipo de Dispositivo</div>
+                    <div class="device-grid" id="dispositivos-grid"></div>
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="irAlPaso(1)">← Anterior</button>
+                        <button class="btn-primary" onclick="irAlPaso(3)">Siguiente →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 3: Configuración -->
+                <div id="paso-3" class="paso-content" style="display:none;">
+                    <div class="form-title">Configura los Parámetros</div>
+                    <div class="info-box" id="config-info"></div>
+                    
+                    <div class="form-section">
+                        <div class="form-title">Información General</div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Nombre del Dispositivo</label>
+                                <input type="text" id="hostname" placeholder="Ej: SEDE1-ROUTER">
+                            </div>
+                            <div class="form-group">
+                                <label>Sede</label>
+                                <select id="sede">
+                                    <option value="1">Sede 1 - Teusaquillo</option>
+                                    <option value="2">Sede 2 - Campus U</option>
+                                    <option value="3">Sede 3 - AV68</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-title">Servicios a Configurar</div>
+                        <div class="checkbox-group" id="servicios-checkboxes"></div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <div class="form-title">Parámetros Avanzados</div>
+                        <div class="form-grid" id="parametros-avanzados"></div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="irAlPaso(2)">← Anterior</button>
+                        <button class="btn-primary" onclick="generarConfiguracion()">Generar →</button>
+                    </div>
+                </div>
+                
+                <!-- Paso 4: Resultado -->
+                <div id="paso-4" class="paso-content" style="display:none;">
+                    <div class="result-container" id="result-container">
+                        <div class="result-header">
+                            <div class="result-title">Configuración Generada</div>
+                            <div class="result-stats">
+                                <div class="stat">
+                                    <div class="stat-value" id="stat-comandos">0</div>
+                                    <div class="stat-label">Comandos</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-value" id="stat-lineas">0</div>
+                                    <div class="stat-label">Líneas</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="tabs">
+                            <button class="tab active" onclick="cambiarTab(event, 'vista-previa')">Vista Previa</button>
+                            <button class="tab" onclick="cambiarTab(event, 'editor')">Editor</button>
+                            <button class="tab" onclick="cambiarTab(event, 'exportar')">Exportar</button>
+                        </div>
+                        
+                        <div id="vista-previa" class="tab-content active">
+                            <div class="command-display" id="command-display"></div>
+                        </div>
+                        
+                        <div id="editor" class="tab-content">
+                            <textarea id="editor-text" style="width: 100%; height: 400px; padding: 15px; background: #0a0f1e; color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;"></textarea>
+                            <button class="btn-primary" style="margin-top: 15px;" onclick="copiarTodo()">📋 Copiar Todo</button>
+                        </div>
+                        
+                        <div id="exportar" class="tab-content">
+                            <div class="export-buttons">
+                                <button class="export-btn" onclick="exportarTXT()">📄 TXT</button>
+                                <button class="export-btn" onclick="exportarJSON()">{ } JSON</button>
+                                <button class="export-btn" onclick="exportarMD()">📝 Markdown</button>
+                                <button class="export-btn" onclick="exportarCSV()">📊 CSV</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn-secondary" onclick="irAlPaso(3)">← Anterior</button>
+                        <button class="btn-secondary" onclick="reiniciar()">🔄 Reiniciar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let estadoWizard = {
+            fabricante: null,
+            dispositivo: null,
+            sede: null,
+            hostname: null,
+            servicios: [],
+            configuracion: null
+        };
+        
+        const dispositivos = {
+            cisco: [
+                { id: 'router', nombre: 'Router', icon: '🔀', desc: 'Enrutamiento y WAN' },
+                { id: 'switch', nombre: 'Switch', icon: '🔗', desc: 'Conmutación de capa 2/3' },
+                { id: 'firewall', nombre: 'Firewall', icon: '🔒', desc: 'Seguridad perimetral' }
+            ],
+            huawei: [
+                { id: 'router', nombre: 'Router', icon: '🔀', desc: 'Enrutamiento y WAN' },
+                { id: 'switch', nombre: 'Switch', icon: '🔗', desc: 'Conmutación de capa 2/3' },
+                { id: 'firewall', nombre: 'Firewall', icon: '🔒', desc: 'Seguridad perimetral' }
+            ],
+            fortinet: [
+                { id: 'fortigate', nombre: 'FortiGate', icon: '🔒', desc: 'Firewall avanzado' },
+                { id: 'fortiswitch', nombre: 'FortiSwitch', icon: '🔗', desc: 'Switch administrado' },
+                { id: 'fortiap', nombre: 'FortiAP', icon: '📡', desc: 'Punto de acceso WiFi' }
+            ]
+        };
+        
+        const serviciosPorDispositivo = {
+            router: ['VLANs', 'OSPF', 'BGP', 'DHCP', 'QoS', 'NAT', 'Seguridad'],
+            switch: ['VLANs', 'STP', 'LACP', 'VLAN Trunking', 'Port Security', 'QoS'],
+            firewall: ['Políticas', 'NAT', 'VPN', 'IPS/IDS', 'Antivirus', 'Logging'],
+            fortigate: ['Políticas', 'NAT', 'VPN SSL', 'Threat Protection', 'Logging'],
+            fortiswitch: ['VLANs', 'STP', 'LACP', 'Port Security'],
+            fortiap: ['SSID', 'Seguridad WiFi', 'Roaming', 'QoS']
+        };
+        
+        const configuracionesComandos = {
+            cisco: {
+                router: {
+                    vlan: 'vlan 10\nname VLAN-Datos\nexit',
+                    ospf: 'router ospf 1\nnetwork 172.16.0.0 0.0.7.255 area 0\nexit',
+                    dhcp: 'ip dhcp pool VLAN10\nnetwork 172.16.1.0 255.255.255.0\ndefault-router 172.16.1.1\nexit'
+                },
+                switch: {
+                    vlan: 'vlan 10\nname VLAN-Datos\nexit',
+                    stp: 'spanning-tree mode rapid-pvst',
+                    security: 'switchport port-security\nswitchport port-security maximum 5'
+                },
+                firewall: {
+                    politica: 'access-list 101 permit tcp any any eq 443\naccess-list 101 deny ip any any',
+                    nat: 'ip nat inside source list 1 interface GigabitEthernet0/0/1 overload'
+                }
+            },
+            huawei: {
+                router: {
+                    vlan: 'vlan 10\ndescription VLAN-Datos\nquit',
+                    ospf: 'ospf 1\narea 0.0.0.0\nnetwork 172.16.0.0 0.0.7.255\nquit',
+                    dhcp: 'dhcp enable\nip pool VLAN10\nnetwork 172.16.1.0 mask 255.255.255.0\nquit'
+                }
+            },
+            fortinet: {
+                fortigate: {
+                    politica: 'config firewall policy\nedit 1\nset srcintf port1\nset dstintf port2\nset action accept\nnext\nend',
+                    nat: 'config firewall ippool\nedit 1\nset startip 192.168.1.1\nset endip 192.168.1.254\nnext\nend'
+                }
+            }
+        };
+        
+        function seleccionarFabricante(fab) {
+            estadoWizard.fabricante = fab;
+            document.querySelectorAll('#paso-1 .device-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.device-card').classList.add('selected');
+            actualizarPasos();
+        }
+        
+        function seleccionarDispositivo(disp) {
+            estadoWizard.dispositivo = disp;
+            document.querySelectorAll('#dispositivos-grid .device-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.device-card').classList.add('selected');
+            actualizarPasos();
+        }
+        
+        function irAlPaso(paso) {
+            document.querySelectorAll('.paso-content').forEach(p => p.style.display = 'none');
+            document.getElementById(`paso-${paso}`).style.display = 'block';
+            
+            if (paso === 2) {
+                mostrarDispositivos();
+            } else if (paso === 3) {
+                mostrarConfiguracion();
+            }
+            
+            actualizarPasos();
+        }
+        
+        function mostrarDispositivos() {
+            const grid = document.getElementById('dispositivos-grid');
+            grid.innerHTML = '';
+            
+            const disps = dispositivos[estadoWizard.fabricante] || [];
+            disps.forEach(disp => {
+                const card = document.createElement('div');
+                card.className = 'device-card';
+                card.onclick = () => {
+                    seleccionarDispositivo(disp.id);
+                };
+                card.innerHTML = `
+                    <div class="device-icon">${disp.icon}</div>
+                    <div class="device-name">${disp.nombre}</div>
+                    <div class="device-description">${disp.desc}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        function mostrarConfiguracion() {
+            const infoBox = document.getElementById('config-info');
+            infoBox.innerHTML = `
+                <strong>Fabricante:</strong> ${estadoWizard.fabricante.toUpperCase()} | 
+                <strong>Dispositivo:</strong> ${estadoWizard.dispositivo}
+            `;
+            
+            const servicios = serviciosPorDispositivo[estadoWizard.dispositivo] || [];
+            const checkboxes = document.getElementById('servicios-checkboxes');
+            checkboxes.innerHTML = '';
+            
+            servicios.forEach(servicio => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `
+                    <input type="checkbox" value="${servicio}" checked>
+                    ${servicio}
+                `;
+                checkboxes.appendChild(label);
+            });
+        }
+        
+        function generarConfiguracion() {
+            estadoWizard.hostname = document.getElementById('hostname').value || `SEDE${document.getElementById('sede').value}-${estadoWizard.dispositivo.toUpperCase()}`;
+            estadoWizard.sede = document.getElementById('sede').value;
+            estadoWizard.servicios = Array.from(document.querySelectorAll('#servicios-checkboxes input:checked')).map(el => el.value);
+            
+            if (!estadoWizard.fabricante || !estadoWizard.dispositivo) {
+                alert('Por favor completa los pasos anteriores');
+                return;
+            }
+            
+            let comandos = [];
+            
+            // Agregar comandos iniciales
+            if (estadoWizard.fabricante === 'cisco') {
+                comandos.push('enable');
+                comandos.push('configure terminal');
+                comandos.push(`hostname ${estadoWizard.hostname}`);
+            } else if (estadoWizard.fabricante === 'huawei') {
+                comandos.push('system-view');
+                comandos.push(`sysName ${estadoWizard.hostname}`);
+            } else if (estadoWizard.fabricante === 'fortinet') {
+                comandos.push('config system global');
+                comandos.push(`set hostname ${estadoWizard.hostname}`);
+                comandos.push('end');
+            }
+            
+            // Agregar comandos por servicio
+            if (estadoWizard.servicios.length > 0) {
+                estadoWizard.servicios.forEach(servicio => {
+                    const key = servicio.toLowerCase().replace(/ /g, '-');
+                    const config = configuracionesComandos[estadoWizard.fabricante]?.[estadoWizard.dispositivo]?.[key];
+                    if (config) {
+                        comandos.push('');
+                        comandos.push(`# ${servicio}`);
+                        comandos.push(config);
+                    }
+                });
+            } else {
+                // Si no hay servicios seleccionados, agregar comandos genéricos
+                const config = configuracionesComandos[estadoWizard.fabricante]?.[estadoWizard.dispositivo];
+                if (config) {
+                    Object.values(config).forEach((cmd, i) => {
+                        if (i > 0) comandos.push('');
+                        comandos.push(cmd);
+                    });
+                }
+            }
+            
+            // Agregar comando final
+            if (estadoWizard.fabricante === 'cisco') {
+                comandos.push('');
+                comandos.push('write memory');
+            } else if (estadoWizard.fabricante === 'huawei') {
+                comandos.push('');
+                comandos.push('save');
+            } else if (estadoWizard.fabricante === 'fortinet') {
+                comandos.push('');
+                comandos.push('execute cfg save');
+            }
+            
+            mostrarResultado(comandos);
+            irAlPaso(4);
+        }
+        
+        function mostrarResultado(comandos) {
+            const texto = comandos.join('\n');
+            document.getElementById('command-display').textContent = texto;
+            document.getElementById('editor-text').value = texto;
+            document.getElementById('stat-comandos').textContent = comandos.length;
+            document.getElementById('stat-lineas').textContent = texto.split('\n').length;
+        }
+        
+        function cambiarTab(event, tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        function copiarTodo() {
+            const texto = document.getElementById('editor-text').value;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('✓ Configuración copiada al portapapeles');
+            });
+        }
+        
+        function exportarTXT() {
+            const texto = document.getElementById('editor-text').value;
+            descargar(texto, 'configuracion.txt', 'text/plain');
+        }
+        
+        function exportarJSON() {
+            const json = {
+                fabricante: estadoWizard.fabricante,
+                dispositivo: estadoWizard.dispositivo,
+                hostname: estadoWizard.hostname,
+                sede: estadoWizard.sede,
+                servicios: estadoWizard.servicios,
+                comandos: document.getElementById('editor-text').value.split('\n'),
+                fecha: new Date().toISOString()
+            };
+            descargar(JSON.stringify(json, null, 2), 'configuracion.json', 'application/json');
+        }
+        
+        function exportarMD() {
+            const md = `# Configuración ${estadoWizard.fabricante.toUpperCase()}
+
+**Dispositivo:** ${estadoWizard.dispositivo}  
+**Hostname:** ${estadoWizard.hostname}  
+**Sede:** ${estadoWizard.sede}  
+**Servicios:** ${estadoWizard.servicios.join(', ')}  
+**Fecha:** ${new Date().toLocaleString()}
+
+\`\`\`
+${document.getElementById('editor-text').value}
+\`\`\`
+`;
+            descargar(md, 'configuracion.md', 'text/markdown');
+        }
+        
+        function exportarCSV() {
+            const comandos = document.getElementById('editor-text').value.split('\n').filter(l => l.trim());
+            const csv = 'Número,Comando\n' + comandos.map((cmd, i) => `${i+1},"${cmd}"`).join('\n');
+            descargar(csv, 'configuracion.csv', 'text/csv');
+        }
+        
+        function descargar(contenido, nombre, tipo) {
+            const blob = new Blob([contenido], { type: tipo });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombre;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function reiniciar() {
+            estadoWizard = {
+                fabricante: null,
+                dispositivo: null,
+                sede: null,
+                hostname: null,
+                servicios: [],
+                configuracion: null
+            };
+            irAlPaso(1);
+        }
+        
+        function actualizarPasos() {
+            const pasos = document.querySelectorAll('.wizard-step');
+            pasos.forEach((paso, i) => {
+                paso.classList.remove('active', 'completed');
+                if (i === 0) paso.classList.add('active');
+            });
+        }
+    </script>
+</body>
+</html>

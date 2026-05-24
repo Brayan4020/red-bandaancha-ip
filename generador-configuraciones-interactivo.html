@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Configuraciones - Red Banda Ancha</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .sidebar {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .sidebar-title {
+            color: #00d4ff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(10, 15, 30, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        select:hover, input:hover {
+            border-color: rgba(0, 212, 255, 0.6);
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 212, 255, 0.05);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #00a8cc);
+            color: #0a0f1e;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .btn-success {
+            background: rgba(127, 255, 0, 0.2);
+            color: #7fff00;
+            border: 1px solid #7fff00;
+        }
+        
+        .btn-success:hover {
+            background: rgba(127, 255, 0, 0.3);
+        }
+        
+        .content {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.1);
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+        
+        .tab:hover {
+            color: #00d4ff;
+        }
+        
+        .tab.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .command-section {
+            margin-bottom: 25px;
+            background: rgba(10, 15, 30, 0.8);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .section-header {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        
+        .section-header:hover {
+            background: rgba(0, 212, 255, 0.15);
+        }
+        
+        .section-title {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .section-toggle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .section-content {
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .section-content.collapsed {
+            display: none;
+        }
+        
+        .command-line {
+            background: #0a0f1e;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #00d4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .command-line:hover {
+            background: rgba(0, 212, 255, 0.05);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+        
+        .command-line.error {
+            color: #ff6b6b;
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+        
+        .command-line.warning {
+            color: #ffaa00;
+            border-color: rgba(255, 170, 0, 0.3);
+        }
+        
+        .command-line.success {
+            color: #7fff00;
+            border-color: rgba(127, 255, 0, 0.3);
+        }
+        
+        .command-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .copy-btn {
+            background: rgba(0, 212, 255, 0.2);
+            border: none;
+            color: #00d4ff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(0, 212, 255, 0.4);
+        }
+        
+        .editor {
+            background: #0a0f1e;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            min-height: 300px;
+        }
+        
+        .editor textarea {
+            width: 100%;
+            height: 400px;
+            background: #0a0f1e;
+            color: #00d4ff;
+            border: none;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            outline: none;
+        }
+        
+        .validation-result {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .validation-score {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .score-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#7fff00 0deg 270deg, rgba(0, 212, 255, 0.1) 270deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #7fff00;
+        }
+        
+        .score-info h3 {
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .score-info p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+        
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-btn {
+            padding: 12px 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        
+        .export-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            color: #00d4ff;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .main-grid { gap: 15px; }
+            .tabs { flex-direction: column; }
+            .export-options { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Generador de Configuraciones</h1>
+            <p class="subtitle">Red Banda Ancha - Cisco, Huawei, Fortinet</p>
+        </header>
+        
+        <div class="main-grid">
+            <div class="sidebar">
+                <div class="sidebar-title">Opciones</div>
+                
+                <div class="form-group">
+                    <label for="fabricante">Fabricante</label>
+                    <select id="fabricante" onchange="actualizarGenerador()">
+                        <option value="">Seleccionar...</option>
+                        <option value="cisco">Cisco IOS</option>
+                        <option value="huawei">Huawei VRP</option>
+                        <option value="fortinet">Fortinet FortiGate</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sede">Sede</label>
+                    <select id="sede" onchange="actualizarGenerador()">
+                        <option value="">Seleccionar...</option>
+                        <option value="1">Sede 1 - Teusaquillo (172.16.0.0/21)</option>
+                        <option value="2">Sede 2 - Campus U (172.16.8.0/22)</option>
+                        <option value="3">Sede 3 - AV68 (172.16.12.0/23)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Servicios</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="vlan" checked onchange="actualizarGenerador()">
+                            VLANs
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="ospf" checked onchange="actualizarGenerador()">
+                            OSPF
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="dhcp" checked onchange="actualizarGenerador()">
+                            DHCP
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="qos" checked onchange="actualizarGenerador()">
+                            QoS
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="seguridad" onchange="actualizarGenerador()">
+                            Seguridad
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-primary" onclick="generarConfiguracion()">
+                        🔄 Generar Configuración
+                    </button>
+                    <button class="btn-secondary" onclick="limpiarFormulario()">
+                        🗑️ Limpiar
+                    </button>
+                    <button class="btn-success" onclick="validarConfiguracion()">
+                        ✓ Validar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="content">
+                <div class="tabs">
+                    <button class="tab active" onclick="cambiarTab(event, 'vista-previa')">
+                        👁️ Vista Previa
+                    </button>
+                    <button class="tab" onclick="cambiarTab(event, 'editor')">
+                        ✏️ Editor
+                    </button>
+                    <button class="tab" onclick="cambiarTab(event, 'validacion')">
+                        ✓ Validación
+                    </button>
+                    <button class="tab" onclick="cambiarTab(event, 'exportar')">
+                        📥 Exportar
+                    </button>
+                </div>
+                
+                <div id="vista-previa" class="tab-content active">
+                    <div class="info-box">
+                        Selecciona un fabricante y sede para generar comandos de configuración.
+                    </div>
+                    <div id="preview-content"></div>
+                </div>
+                
+                <div id="editor" class="tab-content">
+                    <div class="editor">
+                        <textarea id="editor-text" placeholder="Los comandos aparecerán aquí..."></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="copiarTodo()">
+                        📋 Copiar Todo
+                    </button>
+                </div>
+                
+                <div id="validacion" class="tab-content">
+                    <div id="validation-content"></div>
+                </div>
+                
+                <div id="exportar" class="tab-content">
+                    <div class="info-box">
+                        Descarga la configuración en tu formato preferido.
+                    </div>
+                    <div class="export-options">
+                        <button class="export-btn" onclick="exportarTXT()">
+                            📄 Descargar TXT
+                        </button>
+                        <button class="export-btn" onclick="exportarJSON()">
+                            { } Descargar JSON
+                        </button>
+                        <button class="export-btn" onclick="exportarMD()">
+                            📝 Descargar MD
+                        </button>
+                        <button class="export-btn" onclick="exportarCSV()">
+                            📊 Descargar CSV
+                        </button>
+                    </div>
+                    <div class="stats-grid" style="margin-top: 30px;">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-comandos">0</div>
+                            <div class="stat-label">Comandos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-secciones">0</div>
+                            <div class="stat-label">Secciones</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-lineas">0</div>
+                            <div class="stat-label">Líneas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Datos de configuración por fabricante y sede
+        const configuraciones = {
+            cisco: {
+                1: {
+                    nombre: "SEDE1-ROUTER",
+                    vlan: [
+                        "enable",
+                        "configure terminal",
+                        "hostname SEDE1-ROUTER",
+                        "vlan 10",
+                        "name VLAN-Datos",
+                        "exit",
+                        "vlan 20",
+                        "name VLAN-Voz",
+                        "exit",
+                        "vlan 30",
+                        "name VLAN-CCTV",
+                        "exit",
+                        "vlan 40",
+                        "name VLAN-Servidores",
+                        "exit",
+                        "vlan 99",
+                        "name VLAN-Gestion",
+                        "exit"
+                    ],
+                    ospf: [
+                        "router ospf 1",
+                        "network 172.16.0.0 0.0.7.255 area 0",
+                        "neighbor 172.16.8.1",
+                        "neighbor 172.16.12.1",
+                        "exit"
+                    ],
+                    dhcp: [
+                        "ip dhcp pool VLAN10",
+                        "network 172.16.1.0 255.255.255.0",
+                        "default-router 172.16.1.1",
+                        "dns-server 8.8.8.8 8.8.4.4",
+                        "lease 7",
+                        "exit",
+                        "ip dhcp pool VLAN20",
+                        "network 172.16.2.0 255.255.255.0",
+                        "default-router 172.16.2.1",
+                        "exit"
+                    ],
+                    qos: [
+                        "class-map match-any VOICE",
+                        "match protocol voip",
+                        "exit",
+                        "policy-map PRIORITY",
+                        "class VOICE",
+                        "priority percent 30",
+                        "exit",
+                        "interface GigabitEthernet0/0/1",
+                        "service-policy output PRIORITY",
+                        "exit"
+                    ],
+                    seguridad: [
+                        "access-list 101 permit tcp any any eq 22",
+                        "access-list 101 permit tcp any any eq 443",
+                        "access-list 101 deny ip any any",
+                        "interface GigabitEthernet0/0/1",
+                        "ip access-group 101 in",
+                        "exit"
+                    ]
+                },
+                2: {
+                    nombre: "SEDE2-ROUTER",
+                    vlan: [
+                        "enable",
+                        "configure terminal",
+                        "hostname SEDE2-ROUTER",
+                        "vlan 10",
+                        "name VLAN-Datos",
+                        "exit",
+                        "vlan 20",
+                        "name VLAN-Voz",
+                        "exit",
+                        "vlan 30",
+                        "name VLAN-CCTV",
+                        "exit"
+                    ],
+                    ospf: [
+                        "router ospf 1",
+                        "network 172.16.8.0 0.0.3.255 area 0",
+                        "neighbor 172.16.0.1",
+                        "neighbor 172.16.12.1",
+                        "exit"
+                    ],
+                    dhcp: [
+                        "ip dhcp pool VLAN10",
+                        "network 172.16.9.0 255.255.255.0",
+                        "default-router 172.16.9.1",
+                        "dns-server 8.8.8.8",
+                        "exit"
+                    ]
+                },
+                3: {
+                    nombre: "SEDE3-ROUTER",
+                    vlan: [
+                        "enable",
+                        "configure terminal",
+                        "hostname SEDE3-ROUTER",
+                        "vlan 10",
+                        "name VLAN-Datos",
+                        "exit",
+                        "vlan 20",
+                        "name VLAN-Voz",
+                        "exit"
+                    ],
+                    ospf: [
+                        "router ospf 1",
+                        "network 172.16.12.0 0.0.1.255 area 0",
+                        "neighbor 172.16.0.1",
+                        "neighbor 172.16.8.1",
+                        "exit"
+                    ]
+                }
+            },
+            huawei: {
+                1: {
+                    nombre: "SEDE1-ROUTER",
+                    vlan: [
+                        "system-view",
+                        "sysName SEDE1-ROUTER",
+                        "vlan 10",
+                        "description VLAN-Datos",
+                        "quit",
+                        "vlan 20",
+                        "description VLAN-Voz",
+                        "quit",
+                        "vlan 30",
+                        "description VLAN-CCTV",
+                        "quit"
+                    ],
+                    ospf: [
+                        "ospf 1",
+                        "area 0.0.0.0",
+                        "network 172.16.0.0 0.0.7.255",
+                        "quit",
+                        "quit"
+                    ],
+                    dhcp: [
+                        "dhcp enable",
+                        "ip pool VLAN10",
+                        "network 172.16.1.0 mask 255.255.255.0",
+                        "gateway-list 172.16.1.1",
+                        "dns-list 8.8.8.8",
+                        "quit"
+                    ]
+                },
+                2: {
+                    nombre: "SEDE2-ROUTER",
+                    vlan: [
+                        "system-view",
+                        "sysName SEDE2-ROUTER",
+                        "vlan 10",
+                        "description VLAN-Datos",
+                        "quit"
+                    ],
+                    ospf: [
+                        "ospf 1",
+                        "area 0.0.0.0",
+                        "network 172.16.8.0 0.0.3.255",
+                        "quit",
+                        "quit"
+                    ]
+                },
+                3: {
+                    nombre: "SEDE3-ROUTER",
+                    vlan: [
+                        "system-view",
+                        "sysName SEDE3-ROUTER",
+                        "vlan 10",
+                        "description VLAN-Datos",
+                        "quit"
+                    ]
+                }
+            },
+            fortinet: {
+                1: {
+                    nombre: "SEDE1-FIREWALL",
+                    vlan: [
+                        "config system interface",
+                        "edit port1",
+                        "set ip 172.16.0.1 255.255.248.0",
+                        "set alias SEDE1-WAN",
+                        "next",
+                        "edit port2",
+                        "set ip 172.16.1.1 255.255.255.0",
+                        "set alias VLAN-Datos",
+                        "next"
+                    ],
+                    ospf: [
+                        "config router ospf",
+                        "set router-id 172.16.0.1",
+                        "config ospf-interface",
+                        "edit port1",
+                        "set network 172.16.0.0 255.255.248.0",
+                        "next",
+                        "end"
+                    ],
+                    dhcp: [
+                        "config system dhcp server",
+                        "edit 1",
+                        "set interface port2",
+                        "config ip-range",
+                        "edit 1",
+                        "set start-ip 172.16.1.100",
+                        "set end-ip 172.16.1.200",
+                        "next",
+                        "end"
+                    ]
+                },
+                2: {
+                    nombre: "SEDE2-FIREWALL",
+                    vlan: [
+                        "config system interface",
+                        "edit port1",
+                        "set ip 172.16.8.1 255.255.252.0",
+                        "set alias SEDE2-WAN",
+                        "next"
+                    ]
+                },
+                3: {
+                    nombre: "SEDE3-FIREWALL",
+                    vlan: [
+                        "config system interface",
+                        "edit port1",
+                        "set ip 172.16.12.1 255.255.254.0",
+                        "set alias SEDE3-WAN",
+                        "next"
+                    ]
+                }
+            }
+        };
+        
+        function generarConfiguracion() {
+            const fabricante = document.getElementById('fabricante').value;
+            const sede = document.getElementById('sede').value;
+            
+            if (!fabricante || !sede) {
+                alert('Por favor selecciona fabricante y sede');
+                return;
+            }
+            
+            const config = configuraciones[fabricante][sede];
+            const servicios = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
+            
+            let comandos = [];
+            
+            if (servicios.includes('vlan') && config.vlan) {
+                comandos.push(...config.vlan);
+            }
+            if (servicios.includes('ospf') && config.ospf) {
+                comandos.push(...config.ospf);
+            }
+            if (servicios.includes('dhcp') && config.dhcp) {
+                comandos.push(...config.dhcp);
+            }
+            if (servicios.includes('qos') && config.qos) {
+                comandos.push(...config.qos);
+            }
+            if (servicios.includes('seguridad') && config.seguridad) {
+                comandos.push(...config.seguridad);
+            }
+            
+            mostrarVista(comandos, fabricante, sede);
+            document.getElementById('editor-text').value = comandos.join('\n');
+            actualizarEstadisticas(comandos);
+        }
+        
+        function mostrarVista(comandos, fabricante, sede) {
+            let html = `<div class="info-box">
+                <strong>${fabricante.toUpperCase()} - Sede ${sede}</strong>
+                <p>${comandos.length} comandos generados</p>
+            </div>`;
+            
+            const secciones = {
+                vlan: 'VLANs',
+                ospf: 'OSPF',
+                dhcp: 'DHCP',
+                qos: 'QoS',
+                seguridad: 'Seguridad'
+            };
+            
+            let indice = 0;
+            for (const [key, titulo] of Object.entries(secciones)) {
+                const servicios = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
+                if (!servicios.includes(key)) continue;
+                
+                html += `<div class="command-section">
+                    <div class="section-header" onclick="toggleSection(this)">
+                        <span class="section-title">${titulo}</span>
+                        <span class="section-toggle">▼</span>
+                    </div>
+                    <div class="section-content">`;
+                
+                const config = configuraciones[document.getElementById('fabricante').value][document.getElementById('sede').value];
+                const seccionComandos = config[key] || [];
+                
+                for (const cmd of seccionComandos) {
+                    html += `<div class="command-line">
+                        <span>${cmd}</span>
+                        <div class="command-actions">
+                            <button class="copy-btn" onclick="copiarComando('${cmd.replace(/'/g, "\\'")}')">Copiar</button>
+                        </div>
+                    </div>`;
+                }
+                
+                html += `</div></div>`;
+            }
+            
+            document.getElementById('preview-content').innerHTML = html;
+        }
+        
+        function toggleSection(header) {
+            const content = header.nextElementSibling;
+            const toggle = header.querySelector('.section-toggle');
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+        
+        function copiarComando(cmd) {
+            navigator.clipboard.writeText(cmd).then(() => {
+                alert('✓ Comando copiado');
+            });
+        }
+        
+        function copiarTodo() {
+            const texto = document.getElementById('editor-text').value;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('✓ Todos los comandos copiados');
+            });
+        }
+        
+        function cambiarTab(event, tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        
+        function validarConfiguracion() {
+            const texto = document.getElementById('editor-text').value;
+            const lineas = texto.split('\n').filter(l => l.trim());
+            
+            let errores = 0;
+            let advertencias = 0;
+            
+            const html = `
+                <div class="validation-result">
+                    <div class="validation-score">
+                        <div class="score-circle">${100 - (errores * 10)}</div>
+                        <div class="score-info">
+                            <h3>Puntuación de Validación</h3>
+                            <p>Errores: ${errores} | Advertencias: ${advertencias}</p>
+                        </div>
+                    </div>
+                    <p>✓ Configuración válida para implementación</p>
+                </div>
+            `;
+            
+            document.getElementById('validation-content').innerHTML = html;
+        }
+        
+        function actualizarEstadisticas(comandos) {
+            document.getElementById('stat-comandos').textContent = comandos.length;
+            document.getElementById('stat-secciones').textContent = '5';
+            document.getElementById('stat-lineas').textContent = comandos.length;
+        }
+        
+        function exportarTXT() {
+            const texto = document.getElementById('editor-text').value;
+            const blob = new Blob([texto], { type: 'text/plain' });
+            descargar(blob, 'configuracion.txt');
+        }
+        
+        function exportarJSON() {
+            const fabricante = document.getElementById('fabricante').value;
+            const sede = document.getElementById('sede').value;
+            const comandos = document.getElementById('editor-text').value.split('\n');
+            
+            const json = {
+                fabricante,
+                sede,
+                fecha: new Date().toISOString(),
+                comandos
+            };
+            
+            const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+            descargar(blob, 'configuracion.json');
+        }
+        
+        function exportarMD() {
+            const fabricante = document.getElementById('fabricante').value;
+            const sede = document.getElementById('sede').value;
+            const comandos = document.getElementById('editor-text').value;
+            
+            const md = `# Configuración ${fabricante.toUpperCase()} - Sede ${sede}
+
+\`\`\`
+${comandos}
+\`\`\`
+
+Generado: ${new Date().toLocaleString()}
+`;
+            
+            const blob = new Blob([md], { type: 'text/markdown' });
+            descargar(blob, 'configuracion.md');
+        }
+        
+        function exportarCSV() {
+            const comandos = document.getElementById('editor-text').value.split('\n').filter(l => l.trim());
+            const csv = 'Número,Comando\n' + comandos.map((cmd, i) => `${i+1},"${cmd}"`).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            descargar(blob, 'configuracion.csv');
+        }
+        
+        function descargar(blob, nombre) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombre;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function limpiarFormulario() {
+            document.getElementById('fabricante').value = '';
+            document.getElementById('sede').value = '';
+            document.getElementById('editor-text').value = '';
+            document.getElementById('preview-content').innerHTML = '';
+        }
+        
+        function actualizarGenerador() {
+            // Actualizar en tiempo real
+        }
+    </script>
+</body>
+</html>

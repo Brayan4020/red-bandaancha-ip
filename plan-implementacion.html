@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Implementación - Red Banda Ancha</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0f1e 0%, #1a1f2e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .timeline {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 60px;
+        }
+        
+        .timeline-item {
+            background: rgba(13, 21, 38, 0.9);
+            border-left: 4px solid #00d4ff;
+            border-radius: 8px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .timeline-item.completed {
+            border-left-color: #7fff00;
+        }
+        
+        .timeline-item.in-progress {
+            border-left-color: #ffaa00;
+        }
+        
+        .timeline-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 10px;
+        }
+        
+        .timeline-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+        
+        .timeline-duration {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .card {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .card:hover::before {
+            left: 100%;
+        }
+        
+        .card:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            color: #00d4ff;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .card-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        
+        .card-button {
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            color: #00d4ff;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card:hover .card-button {
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 60px;
+            padding: 30px;
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            color: #00d4ff;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+        
+        .section {
+            background: rgba(13, 21, 38, 0.9);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #00d4ff;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        .subsection-title {
+            color: #7fff00;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 4px solid #00d4ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: rgba(255, 170, 0, 0.1);
+            border-left: 4px solid #ffaa00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background: rgba(127, 255, 0, 0.1);
+            border-left: 4px solid #7fff00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th {
+            background: rgba(0, 212, 255, 0.1);
+            color: #00d4ff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+        }
+        
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .footer {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+        }
+        
+        .footer p {
+            margin-bottom: 10px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 30px 0;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .grid { grid-template-columns: 1fr; }
+            .timeline { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: 1fr; }
+            .container { padding: 30px 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">📋</div>
+            <h1>Plan de Implementación</h1>
+            <p class="subtitle">Red Banda Ancha - Infraestructura de Red</p>
+            <p class="description">Guía completa para implementar configuraciones en 3 sedes con Cisco, Huawei y Fortinet</p>
+        </header>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Sedes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Fabricantes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">9</div>
+                <div class="stat-label">Configuraciones</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">~10h</div>
+                <div class="stat-label">Tiempo Total</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📅 Cronograma de Implementación</div>
+            
+            <div class="timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-title">Preparación</div>
+                    <div class="timeline-duration">Día 1 - 30 minutos</div>
+                </div>
+                
+                <div class="timeline-item completed">
+                    <div class="timeline-number">2</div>
+                    <div class="timeline-title">Sede 1 (Cisco)</div>
+                    <div class="timeline-duration">Día 2 - 2.5 horas</div>
+                </div>
+                
+                <div class="timeline-item completed">
+                    <div class="timeline-number">3</div>
+                    <div class="timeline-title">Sede 2 (Huawei)</div>
+                    <div class="timeline-duration">Día 3 - 2 horas</div>
+                </div>
+                
+                <div class="timeline-item completed">
+                    <div class="timeline-number">4</div>
+                    <div class="timeline-title">Sede 3 (Fortinet)</div>
+                    <div class="timeline-duration">Día 4 - 1.5 horas</div>
+                </div>
+                
+                <div class="timeline-item in-progress">
+                    <div class="timeline-number">5</div>
+                    <div class="timeline-title">Validación</div>
+                    <div class="timeline-duration">Día 5 - 2 horas</div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-number">6</div>
+                    <div class="timeline-title">Monitoreo</div>
+                    <div class="timeline-duration">Continuo - Diario</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <a href="#guia-implementacion" class="card">
+                <div class="card-icon">📚</div>
+                <div class="card-title">Guía de Implementación</div>
+                <div class="card-description">
+                    Instrucciones paso a paso para implementar configuraciones en todas las sedes y fabricantes.
+                </div>
+                <button class="card-button">Ver Guía →</button>
+            </a>
+            
+            <a href="#checklists" class="card">
+                <div class="card-icon">✅</div>
+                <div class="card-title">Checklists</div>
+                <div class="card-description">
+                    Formularios interactivos para validar cada fase de la implementación.
+                </div>
+                <button class="card-button">Ver Checklists →</button>
+            </a>
+            
+            <a href="#rollback" class="card">
+                <div class="card-icon">↩️</div>
+                <div class="card-title">Procedimientos de Rollback</div>
+                <div class="card-description">
+                    Procedimientos de recuperación para diferentes escenarios de falla.
+                </div>
+                <button class="card-button">Ver Rollback →</button>
+            </a>
+            
+            <a href="#monitoreo" class="card">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Guía de Monitoreo</div>
+                <div class="card-description">
+                    Métricas, alertas y procedimientos de monitoreo post-implementación.
+                </div>
+                <button class="card-button">Ver Monitoreo →</button>
+            </a>
+        </div>
+        
+        <div id="guia-implementacion" class="section">
+            <div class="section-title">📚 Guía de Implementación</div>
+            
+            <div class="subsection-title">Requisitos Previos</div>
+            <div class="info-box">
+                <strong>Antes de comenzar, asegúrate de tener:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Backup de configuración actual realizado</li>
+                    <li>Acceso SSH verificado en todos los dispositivos</li>
+                    <li>Contraseñas de administrador confirmadas</li>
+                    <li>Ventana de mantenimiento programada</li>
+                    <li>Equipo de soporte disponible</li>
+                </ul>
+            </div>
+            
+            <div class="subsection-title">Arquitectura General</div>
+            <p>La red está diseñada con VLSM (Variable Length Subnet Mask) para optimizar el uso de direcciones IP:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Sede</th>
+                        <th>Ubicación</th>
+                        <th>Red</th>
+                        <th>Hosts Requeridos</th>
+                        <th>Hosts Disponibles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Sede 1</strong></td>
+                        <td>Teusaquillo</td>
+                        <td>172.16.0.0/21</td>
+                        <td>1,600</td>
+                        <td>2,046</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sede 2</strong></td>
+                        <td>Campus U Compensar</td>
+                        <td>172.16.8.0/22</td>
+                        <td>600</td>
+                        <td>1,022</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sede 3</strong></td>
+                        <td>AV68</td>
+                        <td>172.16.12.0/23</td>
+                        <td>400</td>
+                        <td>510</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="subsection-title">Fases de Implementación</div>
+            <p><strong>Fase 1: Preparación (30 minutos)</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Realizar backup de configuración actual</li>
+                <li>Verificar conectividad básica</li>
+                <li>Documentar estado actual</li>
+            </ul>
+            
+            <p><strong>Fase 2: Configuración Inicial (45 minutos)</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Configurar nombre del dispositivo</li>
+                <li>Crear VLANs</li>
+                <li>Configurar interfaces físicas y virtuales</li>
+            </ul>
+            
+            <p><strong>Fase 3: Enrutamiento (30 minutos)</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Habilitar OSPF</li>
+                <li>Configurar vecinos OSPF</li>
+                <li>Verificar adyacencias</li>
+            </ul>
+            
+            <p><strong>Fase 4: Servicios (30 minutos)</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Configurar DHCP</li>
+                <li>Configurar QoS</li>
+                <li>Aplicar políticas</li>
+            </ul>
+            
+            <p><strong>Fase 5: Verificación (20 minutos)</strong></p>
+            <ul style="margin-left: 20px;">
+                <li>Verificar configuración</li>
+                <li>Pruebas de conectividad</li>
+                <li>Verificar OSPF y servicios</li>
+            </ul>
+        </div>
+        
+        <div id="checklists" class="section">
+            <div class="section-title">✅ Checklists de Implementación</div>
+            
+            <div class="warning-box">
+                <strong>⚠️ Importante:</strong> Completar checklist pre-implementación antes de comenzar cualquier cambio.
+            </div>
+            
+            <div class="subsection-title">Checklist Pre-Implementación</div>
+            <form style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Backup de configuración actual realizado
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Acceso SSH verificado en todos los dispositivos
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Contraseñas de administrador confirmadas
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Ventana de mantenimiento programada
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Equipo de soporte disponible
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Procedimiento de rollback disponible
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Documentación actualizada
+                </label>
+            </form>
+            
+            <div class="subsection-title">Checklist Post-Implementación</div>
+            <form style="margin: 20px 0;">
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Todas las interfaces están UP
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Enrutamiento OSPF establecido
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> VLANs creadas y asignadas correctamente
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> DHCP distribuyendo direcciones
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> QoS aplicado en enlaces WAN
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Conectividad entre sedes verificada
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Configuración guardada permanentemente
+                </label>
+                <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+                    <input type="checkbox"> Backup de nueva configuración realizado
+                </label>
+            </form>
+        </div>
+        
+        <div id="rollback" class="section">
+            <div class="section-title">↩️ Procedimientos de Rollback</div>
+            
+            <div class="subsection-title">Matriz de Decisión</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Problema</th>
+                        <th>Severidad</th>
+                        <th>Tiempo</th>
+                        <th>Acción Recomendada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Comando incorrecto</td>
+                        <td>Baja</td>
+                        <td>5 min</td>
+                        <td>Rollback rápido (no comando)</td>
+                    </tr>
+                    <tr>
+                        <td>Interfaz DOWN</td>
+                        <td>Media</td>
+                        <td>10 min</td>
+                        <td>Reconfigurar interfaz</td>
+                    </tr>
+                    <tr>
+                        <td>OSPF no funciona</td>
+                        <td>Media</td>
+                        <td>20 min</td>
+                        <td>Rollback parcial OSPF</td>
+                    </tr>
+                    <tr>
+                        <td>Todas interfaces DOWN</td>
+                        <td>Alta</td>
+                        <td>30 min</td>
+                        <td>Restaurar desde backup</td>
+                    </tr>
+                    <tr>
+                        <td>Dispositivo no responde</td>
+                        <td>Crítica</td>
+                        <td>60 min</td>
+                        <td>Acceso consola + restaurar imagen</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="subsection-title">Rollback Rápido (5-10 minutos)</div>
+            <div class="info-box">
+                <strong>Para errores menores:</strong>
+                <pre style="background: #0a0f1e; padding: 10px; margin-top: 10px; border-radius: 4px; overflow-x: auto;">
+configure terminal
+no [comando original]
+write memory
+                </pre>
+            </div>
+            
+            <div class="subsection-title">Rollback Completo (30-60 minutos)</div>
+            <div class="warning-box">
+                <strong>Para fallas críticas:</strong>
+                <pre style="background: #0a0f1e; padding: 10px; margin-top: 10px; border-radius: 4px; overflow-x: auto;">
+copy tftp: running-config
+Address: 192.168.1.100
+Filename: sede1-running.cfg
+write memory
+                </pre>
+            </div>
+        </div>
+        
+        <div id="monitoreo" class="section">
+            <div class="section-title">📊 Guía de Monitoreo Post-Implementación</div>
+            
+            <div class="subsection-title">Métricas Clave</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Métrica</th>
+                        <th>Objetivo</th>
+                        <th>Alerta</th>
+                        <th>Herramienta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Disponibilidad Interfaces</td>
+                        <td>99.9%</td>
+                        <td>DOWN > 5 min</td>
+                        <td>Zabbix/Nagios</td>
+                    </tr>
+                    <tr>
+                        <td>Utilización Ancho Banda</td>
+                        <td>&lt;70%</td>
+                        <td>&gt;80%</td>
+                        <td>Grafana</td>
+                    </tr>
+                    <tr>
+                        <td>Latencia OSPF</td>
+                        <td>&lt;10ms</td>
+                        <td>&gt;50ms</td>
+                        <td>Ping/SNMP</td>
+                    </tr>
+                    <tr>
+                        <td>Pérdida Paquetes</td>
+                        <td>0%</td>
+                        <td>&gt;0.1%</td>
+                        <td>Ping</td>
+                    </tr>
+                    <tr>
+                        <td>Disponibilidad DHCP</td>
+                        <td>100%</td>
+                        <td>Pool &lt;10%</td>
+                        <td>SNMP</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="subsection-title">Herramientas Recomendadas</div>
+            <div class="success-box">
+                <strong>✅ Zabbix:</strong> Monitoreo SNMP, alertas automáticas, gráficos históricos
+            </div>
+            <div class="success-box">
+                <strong>✅ Nagios:</strong> Chequeos de servicios, notificaciones, reportes
+            </div>
+            <div class="success-box">
+                <strong>✅ Grafana:</strong> Visualización de datos, dashboards personalizados
+            </div>
+            
+            <div class="subsection-title">Cronograma de Validación</div>
+            <ul style="margin-left: 20px;">
+                <li><strong>Diario:</strong> 5 minutos - Validación básica de conectividad</li>
+                <li><strong>Semanal:</strong> 30 minutos - Revisar logs y tendencias</li>
+                <li><strong>Mensual:</strong> 2 horas - Análisis completo y reunión de revisión</li>
+                <li><strong>Trimestral:</strong> Revisar capacidad y planificar mejoras</li>
+                <li><strong>Anual:</strong> Revisión completa de infraestructura</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📞 Contactos y Escalación</div>
+            
+            <div class="subsection-title">Contactos Internos</div>
+            <ul style="margin-left: 20px;">
+                <li><strong>Network Admin:</strong> [nombre] [teléfono] [email]</li>
+                <li><strong>Senior Engineer:</strong> [nombre] [teléfono] [email]</li>
+                <li><strong>Operations Manager:</strong> [nombre] [teléfono] [email]</li>
+            </ul>
+            
+            <div class="subsection-title">Contactos Externos</div>
+            <ul style="margin-left: 20px;">
+                <li><strong>Cisco TAC:</strong> 1-800-553-6387</li>
+                <li><strong>Huawei Support:</strong> support.huawei.com</li>
+                <li><strong>Fortinet Support:</strong> support.fortinet.com</li>
+            </ul>
+            
+            <div class="subsection-title">Escalas de Tiempo de Respuesta</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Severidad</th>
+                        <th>Tiempo Respuesta</th>
+                        <th>Tiempo Resolución</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Crítica</strong></td>
+                        <td>15 minutos</td>
+                        <td>1 hora</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alta</strong></td>
+                        <td>30 minutos</td>
+                        <td>4 horas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Media</strong></td>
+                        <td>2 horas</td>
+                        <td>8 horas</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Baja</strong></td>
+                        <td>8 horas</td>
+                        <td>24 horas</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>Plan de Implementación © 2026 - Red Banda Ancha</p>
+            <p>Generado: <span id="timestamp"></span></p>
+            <p>Versión: 1.0 | Próxima revisión: Agosto 2026</p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('es-CO');
+        
+        // Agregar funcionalidad de scroll suave
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

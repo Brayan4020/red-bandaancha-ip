@@ -8,6 +8,8 @@ export interface ConfigGeneratorInput {
   siteId: "sede1" | "sede2" | "sede3";
   vendor: "huawei" | "cisco" | "fortinet";
   deviceType: "switch" | "router" | "firewall";
+  ipBase?: string; // Base network for dynamic IP planning (e.g., "192.168.1.0/24")
+  ipLoopback?: string; // Loopback IP for router (e.g., "10.0.0.1")
 }
 
 export interface ConfigurationOutput {
@@ -72,6 +74,23 @@ const VLSM_CONFIG = {
 };
 
 /**
+ * Calculate dynamic IP planning based on base network
+ * Extracts three octets and creates VLAN IPs
+ */
+function calcularIPPlanning(ipBase: string) {
+  if (!ipBase) return null;
+  
+  const partes = ipBase.split('/')[0].split('.');
+  const tresOctetos = `${partes[0]}.${partes[1]}.${partes[2]}`;
+  
+  return {
+    vlan10: { nombre: "VLAN_DATOS", id: "10", ip: `${tresOctetos}.1`, mascara: "255.255.255.0" },
+    vlan20: { nombre: "VLAN_VOZ", id: "20", ip: `${tresOctetos}.2`, mascara: "255.255.255.0" },
+    vlan30: { nombre: "VLAN_MGMT", id: "30", ip: `${tresOctetos}.254`, mascara: "255.255.255.0" },
+  };
+}
+
+/**
  * Generate Huawei VRP Configuration
  */
 export function generateHuaweiConfig(
@@ -80,6 +99,9 @@ export function generateHuaweiConfig(
   const site = VLSM_CONFIG[input.siteId];
   const sections: ConfigSection[] = [];
   const allCommands: string[] = [];
+  
+  // Calculate dynamic IP planning if provided
+  const ipPlanning = input.ipBase ? calcularIPPlanning(input.ipBase) : null;
 
   // Initial Access Commands
   const initialCommands = [
@@ -94,15 +116,23 @@ export function generateHuaweiConfig(
   allCommands.push(...initialCommands);
 
   // System Configuration
-  const systemCommands = [
+  const systemCommands: string[] = [
     `sysName SW-${input.siteId.toUpperCase()}-${site.name.split(" ")[0]}`,
     `snmp-agent sys-info version all`,
     `snmp-agent community read public`,
     `snmp-agent community write private`,
     `clock timezone UTC add 00:00:00`,
     `ntp-service unicast-server 172.16.0.254 preference`,
-    `save`,
+    
   ];
+  
+  // Add Loopback interface if ipLoopback is provided
+  if (input.ipLoopback) {
+    systemCommands.push(`interface LoopBack0`);
+    systemCommands.push(` ip address ${input.ipLoopback} 255.255.255.255`);
+  }
+  
+  systemCommands.push(`save`);
   sections.push({
     name: "System Configuration",
     description: "Basic system settings, hostname, SNMP, NTP",
@@ -110,20 +140,20 @@ export function generateHuaweiConfig(
   });
   allCommands.push(...systemCommands);
 
-  // VLAN Configuration
+  // VLAN Configuration - Use dynamic IPs if available
   const vlanCommands = [
     `vlan batch 10 20 30 40 99`,
     `interface Vlanif10`,
     ` description VLAN-DATOS-${input.siteId.toUpperCase()}`,
-    ` ip address ${site.vlans.datos.subnet.split("/")[0]} 255.255.255.0`,
+    ` ip address ${ipPlanning?.vlan10.ip || site.vlans.datos.subnet.split("/")[0]} 255.255.255.0`,
     ` no shutdown`,
     `interface Vlanif20`,
     ` description VLAN-VOZ-${input.siteId.toUpperCase()}`,
-    ` ip address ${site.vlans.voz.subnet.split("/")[0]} 255.255.255.0`,
+    ` ip address ${ipPlanning?.vlan20.ip || site.vlans.voz.subnet.split("/")[0]} 255.255.255.0`,
     ` no shutdown`,
     `interface Vlanif30`,
     ` description VLAN-CCTV-${input.siteId.toUpperCase()}`,
-    ` ip address ${site.vlans.cctv.subnet.split("/")[0]} 255.255.255.0`,
+    ` ip address ${ipPlanning?.vlan30.ip || site.vlans.cctv.subnet.split("/")[0]} 255.255.255.0`,
     ` no shutdown`,
     `interface Vlanif40`,
     ` description VLAN-SERVIDORES-${input.siteId.toUpperCase()}`,

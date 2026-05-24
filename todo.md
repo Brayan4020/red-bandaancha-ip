@@ -47,3 +47,22 @@
 - [x] Instalar dependencia ssh2 y @types/ssh2
 - [x] Compilación exitosa sin errores
 - [x] Todos los tests pasan (61 tests)
+
+
+## IP Planning Dinámico (Nueva Fase)
+
+- [x] Crear función calcularIPPlanning en generador-funcional.html
+- [x] Agregar campos Base Network e IP Loopback al wizard
+- [x] Integrar calcularIPPlanning en generarConfiguracion
+- [x] Actualizar generador para usar valores dinámicos de IP Planning
+- [x] Integrar IP Planning dinámico en backend (config-generator.ts)
+- [x] Actualizar ConfigGeneratorInput para recibir ipBase e ipLoopback
+- [x] Crear función calcularIPPlanning en backend
+- [x] Actualizar generateHuaweiConfig para usar IP Planning dinámico
+- [x] Agregar soporte para Loopback IP en System Configuration
+- [x] Compilación exitosa sin errores (87 tests pasando)
+- [ ] Actualizar generateCiscoConfig para usar IP Planning dinámico
+- [ ] Actualizar generateFortinet Config para usar IP Planning dinámico
+- [ ] Crear tests para IP Planning dinámico en backend
+- [ ] Actualizar procedimiento generateConfig en tRPC para pasar ipBase e ipLoopback
+- [ ] Documentar flujo de IP Planning en guía de usuario
