@@ -66,3 +66,18 @@
 - [ ] Crear tests para IP Planning dinámico en backend
 - [ ] Actualizar procedimiento generateConfig en tRPC para pasar ipBase e ipLoopback
 - [ ] Documentar flujo de IP Planning en guía de usuario
+
+
+## Generador de Comandos Dinámicos (Nueva Fase)
+
+- [x] Crear función generarComandosDinamicos en generador-funcional.html
+- [x] Agregar botón "Generar Dinámico" en el paso 3 del wizard
+- [x] Integrar soporte para Cisco, Huawei y Fortinet en generarComandosDinamicos
+- [x] Validación de inputs (ipBase, loopback)
+- [x] Generar comandos con Loopback IP dinámico
+- [x] Generar VLANs dinámicas con IPs calculadas
+- [x] Generar OSPF con router-id dinámico
+- [ ] Actualizar generateCiscoConfig en backend para usar IP Planning dinámico
+- [ ] Actualizar generateFortinet Config en backend para usar IP Planning dinámico
+- [ ] Crear tests para generarComandosDinamicos
+- [ ] Documentar flujo de generación dinámica en guía de usuario
