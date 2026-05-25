@@ -1,55 +1,54 @@
  🌐 Diseño de Red Banda Ancha — Bogotá, Colombia
 
 ---
+# Asistente Automatizado de IP Planning y Aprovisionamiento Core 🚀
 
-## 📋 Descripción General
+Este repositorio contiene una herramienta web interactiva basada en tecnologías front-end nativas (HTML5/JavaScript) diseñada para automatizar las tareas críticas de **IP Planning**, **Segmentación de VLANs**, **Diseño de Infraestructura Básica** y **Generación de Comandos Iniciales de Configuración** para infraestructuras multi-fabricante (**Cisco IOS**, **Huawei VRP** y **Fortinet FortiOS**).
 
-Este proyecto proporciona una **solución completa de diseño y planificación de infraestructura de red** para una organización con 3 sedes distribuidas en Bogotá (Teusaquillo, Campus U Compensar, AV68). Incluye esquema de direccionamiento IP con VLSM, configuraciones de equipos (Cisco, Huawei, Juniper, Fortinet), topología WAN, redundancia, seguridad y documentación exhaustiva.
-
-### Características Principales
-
-✅ **Esquema de Direccionamiento VLSM** — Red 172.16.0.0/16 optimizada para 2.600 usuarios  
-✅ **Configuraciones Multi-Fabricante** — Cisco IOS, Huawei VRP, Juniper Junos, Fortinet FortiGate  
-✅ **Topología WAN Redundante** — 3 enlaces con failover automático y OSPF/BGP  
-✅ **5 VLANs Segmentadas** — Datos, Voz, CCTV, Servidores, Gestión  
-✅ **QoS Priorizado** — Ancho de banda garantizado para voz y video  
-✅ **Inventario Completo** — 3.500+ equipos con presupuesto estimado ($3.5M USD)  
-✅ **Dashboard Interactivo** — Visualización de subredes, equipos, enlaces WAN  
-✅ **Documentación Exhaustiva** — 25.000+ líneas de guías técnicas
+La herramienta reduce el tiempo de aprovisionamiento de un nodo Core de 20 minutos a menos de 10 segundos, eliminando errores de sintaxis y solapamiento de direccionamiento IP (*overlapping*).
 
 ---
 
-## 🏗️ Arquitectura
+## 🛠️ Características Principales
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    INTERNET (ISP)                            │
-│                   200.1.1.0/24                               │
-└─────────────────┬──────────────────────────────────────────┘
-                  │
-        ┌─────────┴──────────┐
-        │                    │
-    ┌───▼────┐          ┌───▼────┐
-    │ FG3100 │          │ FG3100 │  (HA Activo-Pasivo)
-    │ Primario           │ Secundario
-    └───┬────┘          └───┬────┘
-        │                    │
-        └─────────┬──────────┘
-                  │
-        ┌─────────▼──────────┐
-        │  NE40E Router      │
-        │  172.16.0.254/21   │
-        │  (Sede 1)          │
-        └─────────┬──────────┘
-                  │
-        ┌─────────┴────────────────┐
-        │                          │
-    ┌───▼────┐              ┌────▼───┐
-    │ NE40E  │              │ NE20E  │
-    │ Sede 2 │              │ Sede 3 │
-    │172.16.8│              │172.16.12
-    └────────┘              └────────┘
+1. **IP Planning Inteligente:** Cálculo automatizado de subredes, máscaras de red fijas y gateways a partir de un único segmento de red base (IP Raíz).
+2. **Segmentación de VLANs por Buenas Prácticas:** División inmediata del tráfico de la organización (Datos, Voz, Gestión).
+3. **Diseño de Infraestructura Escalable:** Implementación automatizada de subinterfaces (Router-on-a-Stick) con encapsulación estándar IEEE 802.1Q e integración con enrutamiento dinámico OSPF (Área 0).
+4. **Abstracción Multi-Fabricante:** Traducción instantánea de la lógica de red a las sintaxis nativas de Cisco, Huawei y Fortinet.
+5. **Configuración Inicial de Seguridad:** Inyección de plantillas automáticas para acceso privilegiado, encriptación de claves, accesos SSH/Ping y creación de usuarios administradores locales (`privilege 15` / `super_admin`).
 
+---
+
+## 🗺️ Arquitectura de Red y Topología
+
+La herramienta está diseñada bajo el modelo lógico de **Router-on-a-Stick (RoaS)** conectado a un Switch de Distribución/Core. La topología de referencia que automatiza el script es la siguiente:
+
+```text
+       [ Router Core / Firewall Gateway ] 
+                      |
+                      |  Enlace Troncal (Trunk) 
+                      |  Transportando VLANs 10, 20, 30 via 802.1Q
+                      |
+           [ Switch L3 de Distribución ]
+             /            |            \
+            /             |             \
+     [VLAN 10]         [VLAN 20]       [VLAN 30]
+    PC / Datos       Teléfonos IP       Gestión / MGMT
+
+---
+Pruebas Realizadas y Validación
+El código autogenerado por la herramienta ha sido validado satisfactoriamente en los siguientes entornos de emulación:
+
+Cisco IOS (v15.x): Validado en Cisco Packet Tracer y NOC. Las subinterfaces levantan de forma correcta, las etiquetas de encapsulación dot1q aíslan el tráfico y las adyacencias OSPF se establecen sin alertas de MTU.
+
+Huawei VRP (v5.x / v8.x): Validado en eNSP. El comando crítico arp broadcast enable se ejecuta correctamente, permitiendo el aprendizaje de direcciones MAC en las subinterfaces lógicas.
+
+Fortinet FortiOS (v7.x): Validado en EVE-NG. Las interfaces lógicas se asocian de manera correcta al puerto físico raíz, asignando los privilegios de allowaccess ping https ssh necesarios para la gestión segura.
+PROMPT
+"Actúa como un Ingeniero de Redes de Nivel Senior y Arquitecto de NetDevOps. Diseña un herra,ienta automatizada en un solo archivo HTML utilizando JavaScript y CSS moderno (estilo terminal oscura). 
+El asistente debe estructurarse en 4 pasos (Wizard): 1. Selección de Fabricante (Cisco, Huawei, Fortinet), 2. Tipo de Dispositivo, 3. Parámetros de Red, y 4. Código autogenerado.
+Debe incluir una lógica interna de IP Planning que tome una IP base y autocalcule dinámicamente segmentos lógicos y Wildcards para VLAN 10 (Datos), VLAN 20 (Voz) y VLAN 30 (Gestión). 
+El código del paso 4 debe estructurarse jerárquicamente inyectando: primero, comandos iniciales de administración global (usuarios locales, seguridad, contraseñas cifradas); segundo, el direccionamiento lógico e interfaces trunking (802.1q); tercero, enrutamiento dinámico OSPF v2; y cuarto, el cerrado de comandos para el volcado permanente en la memoria flash. Asegura que la salida del textarea procese saltos de línea físicos reales y limpios interpretables por cualquier navegador web."
 ENLACES WAN:
 ├─ Sede 1 ↔ Sede 2: 100 Mbps (Primario)
 ├─ Sede 2 ↔ Sede 3: 100 Mbps (Primario)
